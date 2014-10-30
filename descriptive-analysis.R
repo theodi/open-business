@@ -57,11 +57,12 @@ biz <- drop.vars(list = c("Timestamp", "Timestamp logged in Staging Database?", 
 
 #---------------------------------------------------
 # STATISTICS
-# TODO: check missings
 
+# Survey: size and sector
 sapply(biz[, 2:3], table)
 sapply(biz[, 2:3], function(x) table(x) / length(na.omit(x)))
 
+# Sectors all organisations
 table(list[, 20])
 table(list[, 20]) / length(na.omit(list[, 20]))
 
@@ -183,13 +184,13 @@ q14 <- rename(q14, c(
 
 lik.q14 <- likert(q14)
 
-plot(lik.q14, low.color = odi_turquoise, high.color = odi_red, text.size = 5)
+plot(lik.q14, low.color = odi_turquoise, high.color = odi_red, text.size = 5) 
 ggsave("graphics/q14-responses.png")
-plot(lik.q14, low.color = odi_turquoise, high.color = odi_red, text.size = 5, centered = FALSE)
+plot(lik.q14, low.color = odi_turquoise, high.color = odi_red, text.size = 5, centered = FALSE) 
 ggsave("graphics/q14-responses-centred.png")
 
 
-
+# + geom_hline(aes(yintercept = c(25, 50)), colour = "white")
 # + ggtitle("Please indicate the extent to which each of the following issues influence your company's decision to use open data")
   
 #---------------------------------------------------
