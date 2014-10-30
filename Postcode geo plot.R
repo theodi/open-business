@@ -24,7 +24,7 @@ UKbox <- c(-8.459, 49.909, 2.175, 59.623)
 
 #This uses google maps but is alright for now - 
 #explore other options - play with other maps and zooms and bounding box coords
-UKmap <- get_map(UKbox,
+UKmap <- get_map(UKbox.g,
                  zoom = 6,
                  maptype = c("terrain"),
                  messaging = FALSE, 
@@ -38,7 +38,7 @@ UKMap <- ggmap(UKmap, extent = 'device', legend = 'topleft')
 print(UKMap)
 #OSM - currently not working properly! maybe doesn't want to export such a large map - can't work out correct scale
 UKmap <- get_map(UKbox,
-                 zoom = 6,
+                 zoom = 7,
                  maptype = c("toner"),
                  filename = "ggmapTemp", crop = FALSE,
                  color = c("bw"),
