@@ -153,13 +153,13 @@ place <- read.csv("lon-lats.csv")
 UKMap.g+ 
   geom_point(aes(x = lon, y = lat), data = place,
              alpha= 1, color = odi_orange)
-ggsave("graphics/UKMap-google.png", height = 4, width = 12)
+ggsave("graphics/UKMap-google.png", height = 6, width = 12)
 
 # On stamen
 UKMap.s+ 
   geom_point(aes(x = lon, y = lat), data = place,
              alpha= 1, color = odi_orange)
-ggsave("graphics/UKMap-Stamen-toner.png", height = 4, width = 12)
+ggsave("graphics/UKMap-Stamen-toner.png", height = 6, width = 12)
 #---------------------------------------------
 #Plots of points on London map
 
@@ -167,13 +167,13 @@ ggsave("graphics/UKMap-Stamen-toner.png", height = 4, width = 12)
 LonMap.g+ 
   geom_point(aes(x = lon, y = lat), data = place,
              alpha= 1, color = odi_orange)
-ggsave("graphics/LonMap-google.png", height = 4, width = 12)
+ggsave("graphics/LonMap-google.png", height = 6, width = 12)
 
 # On stamen
 LonMap.s+ 
   geom_point(aes(x = lon, y = lat), data = place,
              alpha= 1, color = odi_orange)
-ggsave("graphics/LonMap-Stamen-toner.png", height = 4, width = 12)
+ggsave("graphics/LonMap-Stamen-toner.png", height = 6, width = 12)
 #---------------------------------------------
 # PLot of density - heatmap - this is not working - YET!!
 
