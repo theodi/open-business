@@ -30,7 +30,8 @@ column.num <- function(var, x = list.num){
   return(var_index)
 }
 
-head(list.num[, column.num("UK Company Number")])
+#head(list.num[, column.num("UK Company Number")])
+#finds the column headed UK company number and references it to col.num
 col.num<- column.num("UK Company Number")
 
 #this is our list of company numbers
@@ -153,7 +154,9 @@ list.num$col.num <- list.num[, col.num]
 company.numbers <- as.vector(list.num$col.num)
 
 #Column names get lost in loop
-final <- data.frame(CompanyNumber = character(), CompanyName = character(), IncorporationDate = character(), row.names = NULL)
+final <- data.frame(CompanyNumber = character(), CompanyName = character(), CompanyCategory = character(), CompanyStatus = character(),
+                    IncorporationDate = character(), RegPostcode = character(), SICCodes = character(),
+                    SICCode2 = character(), SICCode3 = character(), SICCode4 = character(), row.names = NULL)
 #adds a progress bar 
 pb <- txtProgressBar(min = 0, max = length(company.numbers), style = 3)
 
@@ -162,10 +165,16 @@ for(num in company.numbers){
   tryCatch({
     url <- paste0('http://data.companieshouse.gov.uk/doc/company/',num,'.json')
     document <- fromJSON(url)
-    com.name <- document$primaryTopic$CompanyName
     com.num <- document$primaryTopic$CompanyNumber
+    com.name <- document$primaryTopic$CompanyName
+    ifelse(!is.null(document$primaryTopic$CompanyCategory), com.cat <- document$primaryTopic$CompanyCategory, com.cat <- NA)
+    ifelse(!is.null(document$primaryTopic$CompanyStatus), com.stat <- document$primaryTopic$CompanyStatus, com.stat <- NA)
     ifelse(!is.null(document$primaryTopic$IncorporationDate), date <- document$primaryTopic$IncorporationDate, date <- NA)
-    record <- as.data.frame(t(c(com.num, com.name, date)))
+    ifelse(!is.null(document$primaryTopic$RegAddress$Postcode), com.post <- document$primaryTopic$RegAddress$Postcode, post <- NA)
+    ifelse(!is.null(document$primaryTopic$SICCodes$SicText), sic.code <- document$primaryTopic$SICCodes$SicText, sic.code <- NA)
+    value <- vector(,length =(4-length(sic.code)))
+    sic.codes <- append(as.vector(sic.code), value)
+    record <- as.data.frame(t(c(com.num, com.name, com.cat, com.stat, con.org, date, com.post, sic.codes)))
     final <<- rbind(final, record)
   },
   error = function(e) cat("MESSAGE:", conditionMessage(e), "\n"))
@@ -175,10 +184,10 @@ close(pb)
 
 
 #Name columns
-colnames(final) <- c("CompanyNumber", "CompanyName", "IncorporationDate")
+colnames(final) <- c("CompanyNumber", "CompanyName", "CompanyCategory", "CompanyStatus", "IncorporationDate", "CompanyAdd", "SICCode1", "SICCode2", "SICCode3", "SICCode4")
 
 #make the date column into date format
 final$IncorporationDate <- as.Date(final$IncorporationDate, format("%d/%m/%Y"))
 
 #creates a csv
-write.csv(final, "IncoporatedDates.csv", , row.names = FALSE)
+write.csv(final, "CH_full_info.csv", , row.names = FALSE)

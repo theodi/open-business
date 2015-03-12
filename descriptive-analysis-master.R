@@ -94,8 +94,13 @@ table(list[, col.indu]) / length(na.omit(list[, col.indu]))
 write.csv(table(list[, col.indu]), "data/master-sectors.csv", row.names = FALSE)
 
 
+#----------------------------------------------------
+#----------------------------------------------------
+#To save to SVG
 
-
-
+#save the plot in a variable image to be able to export to svg
+#image= "plot"
+#This actually save the plot in a image
+#ggsave(file="test.svg", plot=image, width=10, height=8)
 
 
