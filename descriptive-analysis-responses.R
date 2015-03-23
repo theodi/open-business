@@ -6,6 +6,7 @@ library(gmodels)
 library(ggplot2)
 library(likert)
 library(plyr)
+library(lubridate)
 source('~/git/ODI colour Scheme.R')
 theme_set(theme_minimal(base_family = "Helvetica Neue", base_size = 18))
 
@@ -78,18 +79,17 @@ biz <- drop.vars(list = c("Q8. If yes, which open government datasets does it cu
 
 # name columns (that is - the variable takes the number of the position of that column so it can be used with reference to biz)
 colQ2 <- column("Q2. What is the size of your company?")
-colQ3 <- column("3. Which category best describes your company's area of business?")
+colQ3 <- column("Q3. Which category best describes your company's area of business?")
+colQ4 <- column("Q4. Which of the following are significant sources of revenue for your company?")
+colQ4_c <- column("Q4. recoded")
 colQ5 <- column("Q5. How does your company currently use open data?")
 colQ6 <- column("Q6. What types of open data does your company use?")
 colQ7 <- column("Q7. Does your company currently use open government datasets?")
 colQ9 <- column("Q9. Does your company currently use other open datasets, such as those provided by businesses, charities, or community projects??")
 colQ12 <- column("Q12. Which pricing mechanism\\(s\\) does your company use for its open data products and\\/or services?")
-
+colQ12_c <- column("Q12. Recoded")
 
 colIncD <- column("Incorporated Date")
-
-
-#colQ4 <- column("Q4. Which of the following are significant sources of revenue for your company?")
 
 #If using Q14
 #head(biz[, column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Provenance of data\\]")])
@@ -110,14 +110,6 @@ colQ14_form <- column("Q14. Please indicate the extent to which each of the foll
 colQ14_docu <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Accompanying documentation\\]")
 colQ14_help <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Help and support from publisher\\]")
 
-#---------------------------------------------------
-
-#FINDING and extracting free text OTHER answers 
-#Extracts other answers out, set to blank first
-#biz$Q5_other_text <- ""
-#biz$Q5_other_text <- gsub(answers_Q5[1], "", biz[, colQ5])
-#for (i in 2:5) biz$Q5_other_text <- gsub(answers_Q5[i], "", biz[, "Q5_other_text"])
-#biz$Q5_other_text <- gsub("^(, ){1,4}", "", biz$Q5_other_text)
 #---------------------------------------------------
 
 #Printing output to RTF - Not worth the effort
@@ -176,72 +168,12 @@ ggplot(employ, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi
 # In theme to move the x label axis.title.x = element_text(vjust=-0.1)
 # geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1)
 
-ggsave("graphics/employees.png", height = 6, width = 14)
+ggsave("graphics/survey/employees.png", height = 6, width = 14)
 
 #INC analysis of SIC Codes and incorporated date
 
 
 #------------------------------------------------
-
-#Incorporated date
-library(lubridate)
-
-#Is incorporated date treated as a date?
-is.Date(biz[, colIncD])
-#Treat incorporated date as a date?
-biz[,colIncD] <- as.Date(biz[,colIncD], format("%d/%m/%Y"))
-#Worked?
-is.Date(biz[, colIncD])
-
-#Any missings?
-
-# Load today's date (might not want to use this but choose a significant day)
-tdate <- now()
-
-#Calculate the interval of time - that is start date (incorporated date) until now (today atm)
-age_int <- new_interval(biz[,colIncD], tdate)
-
-age_sec <- as.duration(age_int)
-
-calc_age <- function(birthDate, refDate = today()) {
-  
-  require(lubridate)
-  
-  period <- as.period(new_interval(birthDate, refDate),
-                      unit = "year")
-  
-  period$year
-  
-}
-
-calc_age(biz[,colIncD])
-
-
-
-#--------------------------------------------------
-
-
-# Create standard durations for a year and a month
-one.year <- duration(num = 1, units = "years")
-one.month <- duration(num = 1, units = "months")
-
-# Calculate the difference in years as float and integer
-diff.years <- new_interval(biz[,colIncD], tdate) / one.year
-years <- floor( new_interval(biz[,colIncD], tdate) / one.year )
-
-# Calculate the modulo for number of months
-diff.months <- round( new_interval(biz[,colIncD], tdate) / one.month )
-months <- diff.months %% 12
-
-# Paste the years and months together with year and date included - for output = good, otherwise quite silly 
-biz$age_char <- ifelse(is.na(years), NA, paste(years, ifelse(years == 1,"year","years"), months, ifelse(months == 1, "month", "months")))
-
-
-#Work out how old companies are in years
-age_days <- tdate - biz[,colIncD]
-
-
-
 
 #---------------------------------------------------
 #IGNORE
@@ -269,7 +201,21 @@ sectors.count <- sectors.count[order(-sectors.count$Freq),]
 #To order 
 sectors <- sectors[order(-sectors$Freq),]
 
+# Plot
 
+# WORKING!!!!!!!
+# Attempt 2 - this works if you treat it as character not factor!!!!
+
+sectors$Var1 <- reorder(sectors$Var1, sectors$Freq)
+
+ggplot(sectors, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
+ geom_text(aes(label = Freq, y = - 2.5), stat = "identity", color = "black", size = 4) + 
+ xlab("") + ylab("Percentage of companies") + coord_flip() +
+ theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank())
+
+#geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
+
+ggsave("graphics/sector-percentages.png", height = 6, width = 12)
 
 
 #THIS IS IRRELEVANT AS I HAVE GOT IT TO WORK!!!
@@ -294,32 +240,106 @@ sectors <- sectors[order(-sectors$Freq),]
 #sectors <- transform(sectors, Var1 = reorder(Var1, order(Freq, decreasing = TRUE))
 #Doesnt work
 
-
-
-
-# Plot
-
-# WORKING!!!!!!!
-# Attempt 2 - this works if you treat it as character not factor!!!!
-
-sectors$Var1 <- reorder(sectors$Var1, sectors$Freq)
-
-ggplot(sectors, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
- geom_text(aes(label = Freq, y = - 2.5), stat = "identity", color = "black", size = 4) + 
- xlab("") + ylab("Percentage of companies") + coord_flip() +
- theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank())
-
-#geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
-
-ggsave("graphics/sector-percentages.png", height = 6, width = 12)
-
-
-
 #---------------------------------------------------
 #IGNORE
 #Q4 Sources of revenue
-
 # Resolve multiple responses - there are loads in this question
+
+answers_Q4 <- c("Advertising", "Consulting", "Contributions/Donations", "Data analysis for clients",
+                "Database licensing", "Government contracts", "Lead generation to other businesses", 
+                "Membership fees", "Grants", "Software licensing", "Subscriptions", 
+                "User fees for web or mobile access", "Software development")
+
+#Any missings? NONE right now
+length(which(is.na(biz[, colQ4_c])))
+# Remove missings - dangerous?
+#biz[is.na(biz[, colQ6]), colQ6] <- ""
+
+#Create dummies - returns LOGICAL for each column - Returns NA if existing value is NA
+biz$Q4_advt <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[1], biz[, colQ4_c]))
+biz$Q4_cons <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[2], biz[, colQ4_c]))
+biz$Q4_dona <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[3], biz[, colQ4_c]))
+biz$Q4_clie <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[4], biz[, colQ4_c]))
+biz$Q4_dbse <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[5], biz[, colQ4_c]))
+biz$Q4_govc <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[6], biz[, colQ4_c]))
+biz$Q4_lead <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[7], biz[, colQ4_c]))
+biz$Q4_memb <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[8], biz[, colQ4_c]))
+biz$Q4_gran <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[9], biz[, colQ4_c]))
+biz$Q4_sofl <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[10], biz[, colQ4_c]))
+biz$Q4_subs <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[11], biz[, colQ4_c]))
+biz$Q4_user <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[12], biz[, colQ4_c]))
+biz$Q4_sofd <- ifelse(is.na(biz[, colQ4_c]), NA, grepl(answers_Q4[13], biz[, colQ4_c]))
+
+#FINDING and extracting free text OTHER answers 
+#Extracts other answers out, set to blank first
+biz$Q4_other_text <- ""
+biz$Q4_other_text <- gsub(answers_Q4[1], "", biz[, colQ4_c])
+for (i in 2:13) biz$Q4_other_text <- gsub(answers_Q4[i], "", biz[, "Q4_other_text"])
+biz$Q4_other_text <- gsub(",", "", biz$Q4_other_text, perl=T) #remove commas
+biz$Q4_other_text <- gsub("^\\s+|\\s+$", "", biz$Q4_other_text) #remove leading and trailing spaces
+
+#Creates dummy for other text
+biz$Q4_other <- ifelse(is.na(biz[, colQ4_c]), NA, ifelse(biz$Q4_other_text == "", FALSE, TRUE))
+
+Q4_dummies <- c('Q4_advt', 'Q4_cons', 'Q4_dona', 'Q4_clie', 'Q4_dbse',
+                'Q4_govc', 'Q4_lead', 'Q4_memb', 'Q4_gran', 'Q4_sofl',
+                'Q4_subs', 'Q4_user', 'Q4_sofd', 'Q4_other')
+
+#Analyse
+
+# SIMPLE
+
+#Number and percentage of answers in each column
+sapply(biz[, Q4_dummies], table) # TRUE/FALSE by column
+sapply(biz[, Q4_dummies], function(x) table(x) / length(na.omit(x)) * 100) # percentage using each of these models 
+
+# How many companies chose only one description?
+table(rowSums(biz[, Q4_dummies])) #Count of number of descriptions chosen
+sum(table(rowSums(biz[, Q4_dummies]))[2:6]) # number who chose more than one description
+sum(table(rowSums(biz[, Q4_dummies]))[2:6]) / sum(table(rowSums(biz[, Q4_dummies]))) * 100 # Percentage of who ticked more than one box
+
+
+#Order for plot and print
+#Save percentages as data frame (transpose to get )
+Q4_table <- t(as.data.frame(round(sapply(biz[, Q4_dummies], function(x) table(x) / length(na.omit(x)) * 100), digits=2)))
+#extract only TRUE 
+Q4_table <- as.data.frame(Q4_table[,"TRUE"])
+#name column
+colnames(Q4_table) <- "Percentage"
+#Rename the rows - add other category
+cat_Q4 <- c(answers_Q4, "Other")
+row.names(Q4_table) <- cat_Q4
+#take out row names as a column
+Q4_table$Var1 = rownames(Q4_table)
+#Set as character to allow ordering
+Q4_table$Var1 <- as.character(Q4_table$Var1)
+#To order
+Q4_table <- Q4_table[order(-Q4_table[, 'Percentage']),]
+# Reset the `rownames` of your original data
+rownames(Q4_table) = NULL
+#Reorder for plot
+Q4_table$Var1 <- reorder(Q4_table$Var1, Q4_table$Percentage)
+
+
+#Print table
+
+#Plot
+
+ggplot(Q4_table, aes(y = Percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
+  geom_text(aes(label = paste(Percentage, "%"), y = - 2.5), stat = "identity", color = "black", size = 5) + 
+  xlab("") + ylab("Percentage of companies") + coord_flip() + 
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(), axis.text.x =
+          element_text(size  = 15))
+
+
+#geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
+
+ggsave("graphics/survey/revenue.png", height = 6, width = 12)
+
+
+
+
+
 
 #---------------------------------------------------
 #HOW DO THEY USE OPEN DATA
@@ -346,6 +366,7 @@ biz$Q5_publish <- grepl(answers_Q5[4], biz[, colQ5])
 biz$Q5_insights <- grepl(answers_Q5[5], biz[, colQ5])
 
 Q5_dummies <- c('Q5_infrastructure', 'Q5_processes', 'Q5_develops', 'Q5_publish', 'Q5_insights')
+
 
 #TEXT HAS BEEN EXTRACTED OTHER CATEGORY CAN BE IGNORED
 #FINDING and extracting free text OTHER answers 
@@ -376,6 +397,42 @@ sum(table(rowSums(biz[, Q5_dummies]))[2:5]) / sum(table(rowSums(biz[, Q5_dummies
 # Only checked on box - which box?
 sapply(biz[rowSums(biz[, Q5_dummies]) == 1, Q5_dummies], table) #Gives TRUE/FALSE for each column out of all the one box ticked
 sapply(biz[rowSums(biz[, Q5_dummies]) == 1, Q5_dummies], function(x) table(x) / length(na.omit(x)) * 100) # percentage of those who ticked that box from all who ticked one box
+
+
+#Plot
+#Save percentages as data frame (transpose to get )
+Q5_table <- t(as.data.frame(round(sapply(biz[, Q5_dummies], function(x) table(x) / length(na.omit(x)) * 100), digits=2)))
+
+#extract only TRUE 
+Q5_plot <- as.data.frame(Q5_table[,"TRUE"])
+#name it
+colnames(Q5_plot) <- "percentage"
+#label rownames without brackets
+row.names(Q5_plot)<- c("Provide infrastructure", 
+                      "Process open data", 
+                      "Develop products",
+                      "Publish open data",
+                      "Provide insights")
+#take out row names as a column
+Q5_plot$Var1 = rownames(Q5_plot)
+# Reset the `rownames` of your original data
+rownames(Q5_plot) = NULL
+
+
+ggplot(Q5_plot, aes(y = percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
+  geom_text(aes(label = paste(percentage, "%"), y = - 2.5), stat = "identity", color = "black", size = 6) + 
+  xlab("") + ylab("Percentage of companies") +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(), axis.text.x =
+          element_text(size  = 15))
+
+#+ coord_flip()
+#geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
+
+ggsave("graphics/survey/roles.png", height = 6, width = 12)
+
+
+
+
 
 
 #COMPLEX
@@ -476,7 +533,6 @@ cat_Q6 <- c(answers_Q6, "Other")
 row.names(output) <- cat_Q6
 #To order
 output <- output[order(-output[,"TRUE"]),]
-
 #----------------------------------------------
 
 #Analyse
@@ -505,6 +561,8 @@ median(table(rowSums(biz[, Q6_dummies]))) # median number of data types chosen
 sapply(biz[rowSums(biz[, Q6_dummies]) == 1, Q6_dummies], table) #Gives TRUE/FALSE for each column out of all the one box ticked
 sapply(biz[rowSums(biz[, Q6_dummies]) == 1, Q6_dummies], function(x) table(x) / length(na.omit(x)) * 100) # percentage of those who ticked that box from all who ticked one box
 
+
+
 #This is alright but produces a hell of a lot of data
 
 # Crossproduct - which appear together
@@ -522,6 +580,44 @@ sapply(biz[biz[, "Q6_agri"], Q6_dummies], table)
 sapply(biz[biz[, "Q6_agri"], Q6_dummies], function(x) table(x) / length(na.omit(x)) * 100)
 
 
+
+#Plotting!!!
+
+
+#Save percentages as data frame (transpose to get )
+Q6_table <- t(as.data.frame(round(sapply(biz[, Q6_dummies], function(x) table(x) / length(na.omit(x)) * 100), digits=2)))
+#Rename the rows - add other category
+cat_Q6 <- c(answers_Q6, "Other")
+row.names(Q6_table) <- cat_Q6
+#To order
+Q6_table <- Q6_table[order(-Q6_table[,"TRUE"]),]
+
+
+#extract only TRUE 
+Q6_plot <- as.data.frame(Q6_table[,"TRUE"])
+#name it
+colnames(Q6_plot) <- "percentage"
+#take out row names as a column
+Q6_plot$Var1 = rownames(Q6_plot)
+# Reset the `rownames` of your original data
+rownames(Q6_plot) = NULL
+#make them characters 
+Q6_plot$Var1 <- as.character(Q6_plot$Var1)
+#Reorder
+Q6_plot$Var1 <- reorder(Q6_plot$Var1, Q6_plot$percentage)
+
+
+
+ggplot(Q6_plot, aes(y = percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
+  geom_text(aes(label = percentage, y = - 2.5), stat = "identity", color = "black", size = 5) + 
+  xlab("") + ylab("Percentage of companies") + coord_flip() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank())
+
+#geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
+
+ggsave("graphics/data-type-percentages.png", height = 6, width = 12)
+
+ 
 
 
 #---------------------------------------------------
@@ -592,40 +688,60 @@ crossprod(na.omit(as.matrix(biz[, crossQ7.Q9]))) / nrow(biz[, crossQ7.Q9]) * 100
 
 #---------------------------------------------------
 # Question 12 - pricing mechanisms
+# Use recoded values - colQ12_c
 
 # Resolve multiple responses - 
 #create list answer_Q12  
 answers_Q12 <- c("Provide unlimited free access to everyone", 
                  "Provide limited free access to everyone \\(e\\.g\\. rate or volume limited\\)", 
                  "Provide free access to only a subset of people", 
-                 "Provide only paid-for access")
+                 "Provide only paid-for access",
+                 "Depends upon client")
 
 #Any missings?
-length(which(is.na(biz[, colQ12])))
+length(which(is.na(biz[, colQ12_c])))
 # Remove missings
 #biz[is.na(biz[, colQ12]), colQ12] <- ""
 
 #Setting up dummy variables - i.e. where Q12 is a specific answer dummy variable = TRUE, otherwise = FALSE
-biz$Q12_unlimited <- ifelse(is.na(biz[, colQ12]), NA, grepl(answers_Q12[1], biz[, colQ12]))
-biz$Q12_limited <- ifelse(is.na(biz[, colQ12]), NA, grepl(answers_Q12[2], biz[, colQ12]))
-biz$Q12_subset <- ifelse(is.na(biz[, colQ12]), NA, grepl(answers_Q12[3], biz[, colQ12]))
-biz$Q12_paid <- ifelse(is.na(biz[, colQ12]), NA, grepl(answers_Q12[4], biz[, colQ12]))
+biz$Q12_unlimited <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[1], biz[, colQ12_c]))
+biz$Q12_limited <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[2], biz[, colQ12_c]))
+biz$Q12_subset <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[3], biz[, colQ12_c]))
+biz$Q12_paid <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[4], biz[, colQ12_c]))
+biz$Q12_client <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[5], biz[, colQ12_c]))
 
-
-#Deal with this in recoding
 # Only OTHER text for Q12
 #Extracts other answers out
-biz$Q12_other_text <- gsub(answers_Q12[1], "", biz[, colQ12])
-for (i in 2:4) biz$Q12_other_text <- gsub(answers_Q12[i], "", biz[, "Q12_other_text"])
+biz$Q12_other_text <- gsub(answers_Q12[1], "", biz[, colQ12_c])
+for (i in 2:5) biz$Q12_other_text <- gsub(answers_Q12[i], "", biz[, "Q12_other_text"])
 biz$Q12_other_text <- gsub("^(, ){1,4}", "", biz$Q12_other_text)
 
 #Creates dummy for other text
-biz$Q12_other <- ifelse(is.na(biz[, colQ12]), NA, ifelse(biz$Q12_other_text == "", FALSE, TRUE))
+biz$Q12_other <- ifelse(is.na(biz[, colQ12_c]), NA, ifelse(biz$Q12_other_text == "", FALSE, TRUE))
 
-# Analysing the dummy variables for Q12 - including 'other' - although this should be recategorised at least in part
-Q12_dummies <- c('Q12_unlimited', 'Q12_limited', 'Q12_subset', 'Q12_paid', 'Q12_other')
+# Set up dummy variables
+Q12_dummies <- c('Q12_unlimited', 'Q12_limited', 'Q12_subset', 'Q12_paid', 'Q12_client', 'Q12_other')
+
+
+#-----------------------------------------------------
+#Printing example here!
+#Save percentages as data frame (transpose to get )
+output <- as.data.frame(crossprod(na.omit(as.matrix(biz[, Q12_dummies.x]))))
+
+#Rename the columns - using rename of limited and add other category
+cat_Q12 <- c("Provide unlimited free access to everyone", 
+             "Provide limited free access to everyone", 
+             "Provide free access to only a subset of people", 
+             "Provide only paid-for access")
+colnames(output) <- cat_Q12
+row.names(output) <- cat_Q12
+#-----------------------------------------------------
+
+
+# Analysing the dummy variables for Q12 - including 'other'
 sapply(biz[, Q12_dummies], table)
 sapply(biz[, Q12_dummies], function(x) table(x) / length(na.omit(x)) * 100)
+# to print - round: round(sapply(biz[, Q12_dummies], function(x) table(x) / length(na.omit(x)) * 100), digits=2)
 
 # How many companies checked more than one box?
 table(rowSums(biz[, Q12_dummies]))
@@ -633,32 +749,32 @@ sum(table(rowSums(biz[, Q12_dummies]))[2:5])
 # Percentage of 2 or more pricing mechanisms
 sum(table(rowSums(biz[, Q12_dummies]))[2:5]) / sum(table(rowSums(biz[, Q12_dummies]))) * 100
 
-# Can also analyse the dummy variables excluding 'other' - as these require more thinking - can be useful in some places
-Q12_dummies.x <- c('Q12_unlimited', 'Q12_limited', 'Q12_subset', 'Q12_paid')
 
-
-# How many companies checked more than one box? - excluding other
-table(rowSums(biz[, Q12_dummies.x]))
-sum(table(rowSums(biz[, Q12_dummies.x]))[3:5])
-# Percentage of 2 or more pricing mechanisms
-sum(table(rowSums(biz[, Q12_dummies.x]))[3:5]) / sum(table(rowSums(biz[, Q12_dummies.x]))) * 100
-
-# Only checked on box - which box?
+# Only checked on box - which box? - especially salient here
 sapply(biz[rowSums(biz[, Q12_dummies]) == 1, Q12_dummies], table)
 sapply(biz[rowSums(biz[, Q12_dummies]) == 1, Q12_dummies], function(x) table(x) / length(na.omit(x)) * 100)
 
 
-# Crossproduct
-crossprod(na.omit(as.matrix(biz[, Q12_dummies])))
-crossprod(na.omit(as.matrix(biz[, Q12_dummies]))) / nrow(biz[, Q12_dummies]) * 100
+# Crossproduct - only makes sense with original 4 variables use.x
+Q12_dummies.x <- c('Q12_unlimited', 'Q12_limited', 'Q12_subset', 'Q12_paid')
+
+crossprod(na.omit(as.matrix(biz[, Q12_dummies.x])))
+crossprod(na.omit(as.matrix(biz[, Q12_dummies.x]))) / nrow(biz[, Q12_dummies.x]) * 100
 
 
+# DONT THINK THIS MAKES SENSE IN CONTEXT
 # working out how often two variables occur together by % in column - i.e. [2,1] gives % of those who answered limited of those who answered unlimited
                                                                           #[1,2] gives % of those who answered unlimited of those who answered limited)  
-True_Q12 <-rep(diag(crossprod(na.omit(as.matrix(biz[, Q12_dummies])))), 5)
-True.m_Q12 <- matrix(True_Q12, 5, byrow = T)
-crossprod(na.omit(as.matrix(biz[, Q12_dummies]))) / True.m_Q12 * 100
+#True_Q12 <-rep(diag(crossprod(na.omit(as.matrix(biz[, Q12_dummies.x])))), 4)
+#True.m_Q12 <- matrix(True_Q12, 4, byrow = T)
+#crossprod(na.omit(as.matrix(biz[, Q12_dummies.x]))) / True.m_Q12 * 100
 
+# Can also analyse the dummy variables excluding 'other' - as these require more thinking - can be useful in some places
+# How many companies checked more than one box? - excluding other
+#table(rowSums(biz[, Q12_dummies.x]))
+#sum(table(rowSums(biz[, Q12_dummies.x]))[3:5])
+# Percentage of 2 or more pricing mechanisms
+#sum(table(rowSums(biz[, Q12_dummies.x]))[3:5]) / sum(table(rowSums(biz[, Q12_dummies.x]))) * 100
 #----------------------------------------------------------
 # Q14 Issues with/in open data
 
@@ -721,7 +837,10 @@ q14 <- rename(q14, c(
 #Remove cases that still have missing data
 q14 <- na.omit(q14)
 
-q14 <- as.data.frame(lapply(q14, function(x) revalue(x, c("2.0"="2", "3.0"="3", "4.0"="4"))))
+
+
+#IGNORE
+#q14 <- as.data.frame(lapply(q14, function(x) revalue(x, c("2.0"="2", "3.0"="3", "4.0"="4"))))
 
 
 #To get frequencies
@@ -744,7 +863,7 @@ q14.percent <- q14.percent[order(-q14.percent$order),]
 lik.q14 <- likert(q14)
 
 #Centred
-plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 6)
+plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 4)
 
 ggsave("graphics/q14-responses-centred.png")
 
@@ -755,3 +874,169 @@ ggsave("graphics/q14-responses-filled.png")
 #plot(lik.q14, low.color = , neutral.color = , high.color = , text.size = 5)
 #+ geom_hline(aes(yintercept = c(25, 50)), colour = "white")
 #+ ggtitle("Please indicate the extent to which each of the following issues influence your company's decision to use open data")
+
+#----------------------------------------------------------------------
+
+#Incorporated date
+
+#Is incorporated date treated as a date?
+is.Date(biz[, colIncD])
+#Treat incorporated date as a date?
+biz[,colIncD] <- as.Date(biz[,colIncD], format("%d/%m/%Y"))
+#Worked?
+is.Date(biz[, colIncD])
+# Load today's date (might not want to use this but choose a significant day)
+tdate <- today()
+
+#Calculate the interval of time - that is start date (incorporated date) until now (today atm) USING POSIXct format
+age_int <- new_interval(as.POSIXct(biz[,colIncD]), as.POSIXct(tdate))
+#Calculate the duration in seconds (this is more accurate/workable than difftime)
+age_sec <- as.duration(age_int)
+
+
+#Printing age solutions - make character variable of years and months
+# Create standard durations for a year and a month
+one.year <- duration(1, units = "years")
+one.month <- duration(1, units = "months")
+# Calculate the difference in years as a whole number - i.e. rounded
+years <- floor(new_interval(biz[,colIncD], tdate) / one.year )
+# Calculate left over rounded number of months (first full number of months then remainder)
+months <- round(new_interval(biz[,colIncD], tdate) / one.month ) %% 12
+# Paste the years and months together with year and date included - for output = good, otherwise quite silly 
+biz$age_char <- ifelse(is.na(years), NA, paste(years, ifelse(years == 1,"year","years"), months, ifelse(months == 1, "month", "months")))
+
+
+#Analysis
+
+#Mean age of companies in seconds
+duration(mean(na.omit(age_sec)), "seconds")
+#Printing mean age in years and months format
+# Calculate the difference in years as float and integer
+mean.years <- floor(duration(mean(na.omit(age_sec)), "seconds") / one.year )
+# Calculate left over rounded number of months
+mean.months <- round(duration(mean(na.omit(age_sec)), "seconds")/ one.month) %% 12
+# Paste the years and months together with year and date included - for output = good, otherwise quite silly 
+mean.age <- paste(mean.years, "years", mean.months, "months")
+
+
+#Put ages into categories
+#Have to use days as is numeric - define cutoffs by one.year
+
+#Categories - less than two years, 2 to 4, 4 to 6, 6 to 8, 8 to 10, 10, 10+
+#biz$age_cat <-cut(age_sec, c(0,2*one.year,4*one.year,6*one.year,8*one.year,10*one.year, 15*one.year, 100*one.year), right = FALSE,
+#labels = c("less than 2 years", "2 to 4 years", "4 to 6 years", "6 to 8 years", "8 to 10 years", "10 to 15 years", "more than 15 years"))
+
+#Using ONS data categories
+biz$age_cat <-cut(age_sec, c(0,2*one.year,4*one.year,10*one.year,100*one.year), right = FALSE,
+                  labels = c("less than 2 years", "2 to 3 years", "4 to 9 years", "more than 10 years"))
+
+
+#What does this now look like?
+table(biz$age_cat)
+table(biz$age_cat) / length(na.omit(biz$age_cat)) * 100 
+
+
+#Plot
+#as dataframe
+age <- as.data.frame(round(table(biz$age_cat) / length(na.omit(biz$age_cat)) * 100, digits = 2))
+
+ggplot(age, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
+  geom_text(aes(label = Freq, y = - 2.5), stat = "identity", color = "black", size = 4) + 
+  xlab("") + ylab("Percentage of companies") + 
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank())
+
+#coord_flip() +
+#geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
+
+ggsave("graphics/survey/age-percentages.png", height = 6, width = 12)
+
+
+
+
+#TIMELINE
+#Cumulative number of companies founded
+
+#By everyday
+#What about doing it every day!
+#Get everyday into a dataframe
+everyday.num <- c(1:as.numeric(as.duration(new_interval(as.POSIXct(ymd(20000101)), as.POSIXct(tdate)))/ddays(1)))
+exist.date <- data.frame(everyday.num)
+exist.date$everyday <- as.Date(ymd(20000101) + days(exist.date$everyday.num))
+
+#ensure still have interval for age
+age_int <- new_interval(as.POSIXct(biz[,colIncD]), as.POSIXct(tdate))
+#Now to get the number of companies that existed on that day
+for(i in 1:as.numeric(as.duration(new_interval(as.POSIXct(ymd(20000101)), as.POSIXct(tdate)))/ddays(1)))
+{exist.date$exist.then[i] <- sum(exist.date$everyday[i] %within% age_int + 0, na.rm = TRUE)}
+
+#plot
+
+ggplot(exist.date, aes(y = exist.then, x = everyday)) + geom_line(stat = "identity", colour = odi_mBlue, size = 1)
+
+ggsave("graphics/survey/incorporation_timeline_byday.png", height = 6, width = 14)
+
+
+#By month
+#Set up months as a dataframe - arbitrary choice of date - could use open data timeline?
+list.months <- c("January", "February", "March", "April", "May", "June", "July", 
+                 "August", "September", "October", "November", "December")
+years.then <- c(2000:2014)
+month.num <- c(0:179)
+exist <- data.frame(month.num, rep(list.months,15), rep(years.then, each=12))
+#Include Jan 2015 for sake of one company which changed since survey
+jan <- c(180, "January", 2015)
+exist <<- rbind(exist,jan)
+#make those fields that need to be numeric - numeric
+exist$month.num <- as.numeric(exist$month.num)
+colnames(exist) <- c("month.num", "Month", "Year")
+
+#Because months are difficult beasts - first day must always return first of month so adds whole months
+# and last day must always get last day so gets last logical day
+
+first.day <- as.Date(ymd(20000101) + months(exist$month.num))
+last.day <- as.Date(ymd(20000131) %m+% months(exist$month.num))
+
+exist$month.span <- new_interval(as.POSIXct(first.day), as.POSIXct(last.day))
+#For plots - midpoint when the value can be plotted against
+exist$mid.day <- first.day + (last.day - first.day)/2
+
+#ensure still have interval for age
+age_int <- new_interval(as.POSIXct(biz[,colIncD]), as.POSIXct(tdate))
+#Now to get the number of companies that existed during that month - i.e. takes first whole month
+for(i in 1:181){exist$exist.then[i] <- sum(exist$month.span[i] %within% age_int + 0, na.rm = TRUE)}
+
+
+
+
+# Now to plot this baby
+
+#Get the things we need - simpler to make a new df
+date.point <- exist$mid.day
+exist.then <- exist$exist.then
+exist.plot <- data.frame(date.point, exist.then)
+
+ggplot(exist.plot, aes(y = exist.then, x = date.point)) + geom_line(stat = "identity", colour = odi_mBlue, size = 1)
+
+ggsave("graphics/survey/incorporation_timeline.png", height = 6, width = 14)
+
+
+#+ xlab("Number of companies") + ylab("Date")
+#  ylim(0, 100) + 
+#  geom_text(aes(label = paste(round(Freq, digits=2), "%"), y = (Freq+3)), stat = "identity", color = "black", size = 5) +  
+#  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank())
+
+
+#Could do it with a date
+#date <- as.Date("2010-12-13")
+#exist.date <- sum(date %within% age_int + 0, na.rm = TRUE)
+
+#PERIOD function not really working - bit of a hack to use duration and set athematical values for months and years but oh well
+#Calculate ther period of time 
+#age_period <- as.period(biz$age_sec)
+#Less precise
+#Work out how old companies are in days (difftime)
+#biz$age_days <- tdate - biz[,colIncD]
+#Mean in days
+#mean(na.omit(age_days))
+
+

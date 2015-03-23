@@ -1,4 +1,3 @@
-
 setwd("~/git/open-business")
 library(RGoogleDocs)
 library(jsonlite)
