@@ -21,7 +21,7 @@ rm(list = c('gmailpw'))
 # Load the master database
 list.sheet <- getWorksheets(spreadsheets[["1. Master Database"]], sheets.con)
 list.all <- sheetAsMatrix(list.sheet[["Data"]], header = TRUE)
-
+sic.lookup <- sheetAsMatrix(list.sheet[["SIC Code Lookup"]], header = TRUE)
 #--------------------------------------------------
 # CLEAN DATA
 #--------------------------------------------------
@@ -40,16 +40,25 @@ column.list <- function(var, x = list){
 #Naming columns - structuring the data
 
 #Displays head of specific column
-head(list[, column.list("Reason for inculsion\\/exclusion on public OBUK \\(without survey\\)")])
-head(list[, column.list("Primary UK Address")])
-head(list[, column.list("Primary Field\\/Industry")])
-head(list[, column.list("Incorporated Date")])
+#head(list[, column.list("Reason for inculsion\\/exclusion on public OBUK \\(without survey\\)")])
+#head(list[, column.list("Primary UK Address")])
+#head(list[, column.list("Primary Field\\/Industry")])
+#head(list[, column.list("Incorporated Date")])
+#head(list[, column.list("SICCode1 Section")])
+#head(list[, column.list("SICCode2 Section")])
+#head(list[, column.list("SICCode3 Section")])
+#head(list[, column.list("SICCode4 Section")])
+
 
 # name columns
 col.incl <- column.list("Reason for inculsion\\/exclusion on public OBUK \\(without survey\\)")
 col.addr <- column.list("Primary UK Address")
 col.indu <- column.list("Primary Field\\/Industry")
 col.date <- column.list("Incorporated Date")
+sic.1 <- column.list("SICCode1 Section")
+sic.2 <- column.list("SICCode2 Section")
+sic.3 <- column.list("SICCode3 Section")
+sic.4 <- column.list("SICCode4 Section")
 
 #---------------------------------------------------
 # Analysis
@@ -79,24 +88,118 @@ table(list$London) / length(na.omit(list$London)) * 100
 
 
 #Location Plot
-
-#Plot addresses from Master - 
-#write.csv(table(list[, "Postcode"]), "master-postcodes.csv", , row.names = FALSE)
-write.csv(list[, "Postcode"], "master-postcodes.csv", , row.names = FALSE)
+postcodes <- na.omit(list[, "Postcode"])
+write.csv(postcodes, "data/master-postcodes.csv", , row.names = FALSE)
 
 #RUN "Postcode geo plot.R" to plot maps
 
 #---------------------------------------------------
 
 #Sectors
-#Based on SIC codes and/or "Primary Field/Industry"
 
-# Sectors all organisations
-table(list[, col.indu])
-table(list[, col.indu]) / length(na.omit(list[, col.indu]))
+#SIC Codes
 
-# Export count of sectors
-write.csv(table(list[, col.indu]), "data/master-sectors.csv", row.names = FALSE)
+#Guide - select only where the value exists - i.e. test not na, paste previous if is, else continue
+#ifelse(is.na(list[,sic.1]), "", 
+#       ifelse(is.na(list[,sic.2]), list[,sic.1], 
+#              ifelse(is.na(list[,sic.3]), paste(list[,sic.1], list[,sic.2]), 
+#                     ifelse(is.na(list[,sic.4]), paste(list[,sic.1], list[,sic.2], list[,sic.3]), 
+#                            paste(list[,sic.1], list[,sic.2], list[,sic.3], list[,sic.4])))))
+
+#Add in tests for duplicates - this does however stop when a duplicate is found in the next SIC code i.e. sic.1 = sic.2 - it will paste sic.1 BUT if sic.3 != sic.1 lose sic.3
+#ifelse(is.na(list[,sic.1]), "", 
+#  ifelse(is.na(list[,sic.2]), list[,sic.1], ifelse(list[,sic.1] == list[,sic.2], paste(list[,sic.1]), 
+#    ifelse(is.na(list[,sic.3]), paste(list[,sic.1], list[,sic.2]), ifelse(list[,sic.2] == list[,sic.3], paste(list[,sic.1], list[,sic.2]), 
+#          ifelse(is.na(list[,sic.4]), paste(list[,sic.1], list[,sic.2],list[,sic.3]), ifelse(list[,sic.3] == list[,sic.4], paste(list[,sic.1], list[,sic.2],list[,sic.3]),                                                               
+#                    paste(list[,sic.1], list[,sic.2],list[,sic.3], list[,sic.4]))))))))                                          
+
+#Fix this - add in 2 extra branches to catch the places where we missed the analysis before
+#All comparisons made
+sic.codes <- ifelse(is.na(list[,sic.1]), NA, 
+                  ifelse(is.na(list[,sic.2]), list[,sic.1], ifelse(list[,sic.1] == list[,sic.2],
+                                                                     #Add in branch for this occassion - where 1 = 2 - instead of just paste(list[,sic.1])
+                                                                     ifelse(is.na(list[,sic.3]), paste(list[,sic.1]), ifelse(list[,sic.1] == list[,sic.3], paste(list[,sic.1]), 
+                                                                          ifelse(is.na(list[,sic.4]), paste(list[,sic.1], ",", list[,sic.3]), ifelse(list[,sic.1] == list[,sic.4], paste(list[,sic.1], ",", list[,sic.3]),                                                               
+                                                                              ifelse(list[,sic.3] == list[,sic.4], paste(list[,sic.1], ",", list[,sic.3]), paste(list[,sic.1], ",", list[,sic.3], ",", list[,sic.4])))))), 
+                      ifelse(is.na(list[,sic.3]), paste(list[,sic.1], ",", list[,sic.2]), ifelse(list[,sic.2] == list[,sic.3], 
+                                                                          #Add in branch for this occassion - where 2 = 3 - instead of just paste(list[,sic.1], list[,sic.2]),
+                                                                            ifelse(is.na(list[,sic.4]), paste(list[,sic.1], ",", list[,sic.2]), ifelse(list[,sic.2] == list[,sic.4], paste(list[,sic.1], ",", list[,sic.2]), 
+                                                                                  ifelse(list[,sic.1] == list[,sic.4], paste(list[,sic.1], ",", list[,sic.2]), paste(list[,sic.1], ",", list[,sic.2], ",", list[,sic.4])))),
+                              ifelse(is.na(list[,sic.4]), paste(list[,sic.1], ",", list[,sic.2], ",", list[,sic.3]), ifelse(list[,sic.3] == list[,sic.4], paste(list[,sic.1], ",", list[,sic.2], ",", list[,sic.3]),
+                                     paste(list[,sic.1], ",", list[,sic.2], ",", list[,sic.3], ",", list[,sic.4]))))))))                                          
+
+#Split the string up into all observations and unlist it - so companies can have multiple in same vector
+sic.codes.all <- unlist(strsplit(na.omit(sic.codes), " , "))
+
+#Get counts of each observation - i.e. which sectors
+table(sic.codes.all)
+# Percentages
+round(table(sic.codes.all) / length(na.omit(sic.codes.all)) * 100, digits = 2)
+
+#Set percentages as a data frame
+sectors <- as.data.frame(round(table(sic.codes.all) / length(na.omit(sic.codes.all)) * 100, digits = 2))
+
+#Make a reference dataframe of labels
+sector.names <- na.omit(data.frame(sic.lookup[, "Section"], sic.lookup[, "Label"]))
+colnames(sector.names) <- c('Section', 'Label')
+
+#Lookup the values so that if the 'section' matches the 'sic.code.all' attatch the definition
+sectors$label <- na.omit(ifelse(sector.names$Section %in% sectors$sic.codes.all, sector.names$Label, NA))
+
+#remake without section letter
+sectors <- data.frame(sectors$Freq, sectors$label)
+colnames(sectors) <- c('Freq', 'label')
+#As character
+sectors$label <- as.character(sectors$label)
+
+#Order to plot
+sectors <- sectors[order(-sectors$Freq),]
+row.names(sectors) = NULL
+sectors$label <- reorder(sectors$label, sectors$Freq)
+
+
+#plot
+#Non-stacked bar
+ggplot(sectors, aes(y = Freq, x = label)) + geom_bar(stat = "identity", fill = odi_mBlue) +
+  xlab("") + ylab("Percentage of companies") + coord_flip() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank())
+
+#Stacked bar - fail
+ggplot(sectors, aes(x = 1, y = Freq, fill = label)) + geom_bar(stat = "identity")
+
+barplot(as.matrix(sectors$Freq),beside = FALSE, col = odi_pallette) 
+
+#tree map
+
+
+#Pie - don't do it
+#Add percentages to labels
+lbls <- paste(paste(sectors$label, sectors$Freq), "%", sep= "")
+pie(sectors$Freq, labels = lbls, col = odi_pallette)
+
+
+#Alternative whole string replace
+#sectors.alt <- data.frame(sic.codes.all, c(rep(1,length(sic.codes.all))))
+#colnames(sectors.alt) <- c('section', 'x')
+
+#Make a reference dataframe of labels
+#sector.names <- na.omit(data.frame(sic.lookup[, "Section"], sic.lookup[, "Label"]))
+#colnames(sector.names) <- c('Section', 'Label')
+
+#replace with grepl
+
+
+#order of section - set levels - manual hack atm
+
+#levels(sectors.alt$section)
+#sectors.alt$section <- factor(sectors.alt$section, levels = rev(c("J", "M", "N", "S", "P", "R", "K", "G", "O", "Q", "F", "U", "C")))
+#levels(sectors.alt$section)
+
+#ggplot(sectors.alt, aes(x = x)) + geom_bar(aes(weight=100, fill = section), position = 'fill', binwidth = 50)
+
+#need to remove a minus if want to 
+#sectors$label <- factor(sectors$label, levels = sectors$label)
+
 
 #----------------------------------------------------
 #Incorporated date
@@ -194,6 +297,15 @@ ggplot(exist, aes(y = exist.then, x = day)) + geom_line(stat = "identity", colou
 ggsave("graphics/master/incorporation_timeline_byday.png", height = 6, width = 14)
 
 
+#----------------------------------------------------
+#Sectors based on manual coded "Primary Field/Industry"
+
+# Sectors all organisations
+#table(list[, col.indu])
+#table(list[, col.indu]) / length(na.omit(list[, col.indu]))
+
+# Export count of sectors
+#write.csv(table(list[, col.indu]), "data/master-sectors.csv", row.names = FALSE)
 
 
 

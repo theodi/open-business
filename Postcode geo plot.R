@@ -1,8 +1,4 @@
-
-#Plot addresses from Master - 
-#write.csv(table(list[, "Postcode"]), "master-postcodes.csv", , row.names = FALSE)
-write.csv(list[, "Postcode"], "master-postcodes.csv", , row.names = FALSE)
-
+#Set up address file from master first
 
 setwd("~/git/open-business")
 theme_set(theme_minimal(base_family = "Helvetica Neue", base_size = 18))
