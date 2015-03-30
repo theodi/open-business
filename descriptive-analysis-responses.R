@@ -80,18 +80,16 @@ biz <- drop.vars(list = c("Q8. If yes, which open government datasets does it cu
 # name columns (that is - the variable takes the number of the position of that column so it can be used with reference to biz)
 colQ2 <- column("Q2. What is the size of your company?")
 colQ3 <- column("Q3. Which category best describes your company's area of business?")
-colQ4 <- column("Q4. Which of the following are significant sources of revenue for your company?")
+#colQ4 <- column("Q4. Which of the following are significant sources of revenue for your company?")
 colQ4_c <- column("Q4. recoded")
 colQ5 <- column("Q5. How does your company currently use open data?")
 colQ6 <- column("Q6. What types of open data does your company use?")
 colQ7 <- column("Q7. Does your company currently use open government datasets?")
 colQ9 <- column("Q9. Does your company currently use other open datasets, such as those provided by businesses, charities, or community projects??")
-colQ12 <- column("Q12. Which pricing mechanism\\(s\\) does your company use for its open data products and\\/or services?")
+#colQ12 <- column("Q12. Which pricing mechanism\\(s\\) does your company use for its open data products and\\/or services?")
 colQ12_c <- column("Q12. Recoded")
 
-colIncD <- column("Incorporated Date")
-
-#If using Q14
+#If using Q14 - currently analysis chooses all the columns by type
 #head(biz[, column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Provenance of data\\]")])
 #head(biz[, column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Licensing of datasets\\]")])
 #head(biz[, column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Accuracy of data\\]")])
@@ -101,14 +99,14 @@ colIncD <- column("Incorporated Date")
 #head(biz[, column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Accompanying documentation\\]")])
 #head(biz[, column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Help and support from publisher\\]")])
 
-colQ14_prov <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Provenance of data\\]")
-colQ14_lice <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Licensing of datasets\\]")
-colQ14_accu <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Accuracy of data\\]")
-colQ14_time <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Timeliness of data\\]")
-colQ14_ease <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Ease of access to datasets\\]")
-colQ14_form <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Format of data\\]")
-colQ14_docu <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Accompanying documentation\\]")
-colQ14_help <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Help and support from publisher\\]")
+#colQ14_prov <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Provenance of data\\]")
+#colQ14_lice <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Licensing of datasets\\]")
+#colQ14_time <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Timeliness of data\\]")
+#colQ14_accu <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Accuracy of data\\]")
+#colQ14_ease <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Ease of access to datasets\\]")
+#colQ14_form <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Format of data\\]")
+#colQ14_docu <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Accompanying documentation\\]")
+#colQ14_help <- column("Q14. Please indicate the extent to which each of the following issues influence your company's decision to use open data: \\[Help and support from publisher\\]")
 
 #---------------------------------------------------
 
@@ -147,36 +145,47 @@ table(biz[, colQ2])
 table(biz[, colQ2]) / length(na.omit(biz[, colQ2])) * 100 
 
 #Creates a new data frame - so we can print and plot
-employ.count <- as.data.frame(table(biz[, colQ2]))
 employ <- as.data.frame(table(biz[, colQ2]) / length(na.omit(biz[, colQ2])) * 100)
+#employ.count <- as.data.frame(table(biz[, colQ2])) #for printing count
+
+#Lower case "More than..." to "more than..."
+employ$Var1 <- as.character(employ$Var1)
+employ$Var1[employ$Var1 == "More than 1000 employees"] <- "more than 1000 employees"
 
 #Order them:
 #Set Target order
 target.Q2 <- c("fewer than 10 employees", "10 - 50 employees", "51 - 250 employees",
-               "251 - 1000 employees",  "More than 1000 employees")
+               "251 - 1000 employees",  "more than 1000 employees")
 # order Var1 by the target
 employ$Var1 <- factor(employ$Var1, levels=target.Q2)
 employ <- employ[order(employ$Var1, employ$Freq),]
 
+#Adding line breaks for two longer labels
+levels(employ$Var1) <- gsub(" employees", "\n employees", levels(employ$Var1))
 
-#Plot them
+#levels(employ$Var1) <- gsub("more than 1000 employees", "more than \n 1000 employees", levels(employ$Var1))
+
+#Plot
 ggplot(employ, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue) +
-  ylim(0, 100) + 
-  geom_text(aes(label = paste(round(Freq, digits=2), "%"), y = (Freq+3)), stat = "identity", color = "black", size = 5) + 
-  xlab("") + ylab("Percentage responses") +
-  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank())
-# In theme to move the x label axis.title.x = element_text(vjust=-0.1)
+  ylim(0, 80) +
+  geom_text(aes(label = paste(round(Freq, digits=2), "%"), y = (Freq+3)), stat = "identity", color = "black", size = 6) + 
+  xlab("") + ylab("Percentage of companies")  +
+  theme(axis.text.y = element_text(size = 16), axis.text.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20, vjust=1.2), panel.grid.minor = element_blank(), 
+        panel.grid.major = element_blank(), axis.ticks = element_blank())
+
+# In theme:
+# to move the x axis title axis.title.x = element_text(vjust=-0.1)
+# to angle the x labels axis.text.x = element_text(angle=90, vjust=1)
 # geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1)
 
-ggsave("graphics/survey/employees.png", height = 6, width = 14)
-
-#INC analysis of SIC Codes and incorporated date
+#save as PNG
+ggsave("graphics/survey/employees.png", height = 6, width = 12)
 
 
 #------------------------------------------------
 
 #---------------------------------------------------
-#IGNORE
 #Q3 Area of business
 #check what the distribution looks like in terms of sectors - now inconsequential - but not for ODM
 table(biz[, colQ3])
@@ -185,18 +194,17 @@ table(biz[, colQ3]) / length(na.omit(biz[, colQ3])) * 100
 
 #Save counts as data frame
 sectors.count <- as.data.frame(table(biz[, colQ3]))
+#To order 
+sectors.count <- sectors.count[order(-sectors.count$Freq),]
+
+
 #Save percentages as data frame
 sectors <- as.data.frame(round(table(biz[, colQ3]) / length(na.omit(biz[, colQ3])) * 100, digits = 2))
-
 
 #Rename mistakes
 sectors$Var1 <- as.character(sectors$Var1)
 sectors$Var1[sectors$Var1 == "Environment  & Weather"] <- "Environment & Weather"
 sectors$Var1[sectors$Var1 == "Food and agriculture"] <- "Food and Agriculture"
-
-#To print
-#To order 
-sectors.count <- sectors.count[order(-sectors.count$Freq),]
 
 #To order 
 sectors <- sectors[order(-sectors$Freq),]
@@ -208,14 +216,18 @@ sectors <- sectors[order(-sectors$Freq),]
 
 sectors$Var1 <- reorder(sectors$Var1, sectors$Freq)
 
-ggplot(sectors, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
- geom_text(aes(label = Freq, y = - 2.5), stat = "identity", color = "black", size = 4) + 
+ggplot(sectors, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  + ylim(0, 70) +
+ geom_text(aes(label = paste0(round(Freq, digits=2), "%"), y = (Freq+4.5)), stat = "identity", color = "black", size = 6) + 
  xlab("") + ylab("Percentage of companies") + coord_flip() +
- theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank())
+ theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(),
+       axis.title.x = element_text(size = 20, vjust=-0.3), axis.text.x = element_text(size = 16),
+       axis.text.y = element_text(size = 19))
+
+
 
 #geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
 
-ggsave("graphics/sector-percentages.png", height = 6, width = 12)
+ggsave("graphics/Survey/sector-percentages.png", height = 6, width = 12)
 
 
 #THIS IS IRRELEVANT AS I HAVE GOT IT TO WORK!!!
@@ -320,25 +332,22 @@ rownames(Q4_table) = NULL
 #Reorder for plot
 Q4_table$Var1 <- reorder(Q4_table$Var1, Q4_table$Percentage)
 
-
 #Print table
+
 
 #Plot
 
-ggplot(Q4_table, aes(y = Percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
-  geom_text(aes(label = paste(Percentage, "%"), y = - 2.5), stat = "identity", color = "black", size = 5) + 
+ggplot(Q4_table, aes(y = Percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  + ylim(0, 65) +
+  geom_text(aes(label = paste0(Percentage, "%"), y = (Percentage+5)), stat = "identity", color = "black", size = 6) + 
   xlab("") + ylab("Percentage of companies") + coord_flip() + 
-  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(), axis.text.x =
-          element_text(size  = 15))
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), 
+        axis.ticks = element_blank(), axis.title.x = element_text(size = 20, vjust=-0.3),
+        axis.text.y = element_text(size = 19), axis.text.x = element_text(size = 16))
 
 
 #geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
 
 ggsave("graphics/survey/revenue.png", height = 6, width = 12)
-
-
-
-
 
 
 #---------------------------------------------------
@@ -418,21 +427,23 @@ Q5_plot$Var1 = rownames(Q5_plot)
 # Reset the `rownames` of your original data
 rownames(Q5_plot) = NULL
 
+#Adding breaks in between words then fix for 3 word ones so 'open data' appears on one line
+#This requires setting levels for the plot and then using the levels not the variable itself in the plot
+levels(Q5_plot$Var1) <- gsub(" ", "\n", Q5_plot$Var1)
+levels(Q5_plot$Var1) <- gsub("open\ndata", "open data", levels(Q5_plot$Var1))
 
-ggplot(Q5_plot, aes(y = percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
-  geom_text(aes(label = paste(percentage, "%"), y = - 2.5), stat = "identity", color = "black", size = 6) + 
+#Plot
+ggplot(Q5_plot, aes(y = percentage, x = levels(Var1))) + geom_bar(stat = "identity", fill = odi_mBlue) + ylim(0, 70) +
+  geom_text(aes(label = paste0(percentage, "%"), y = (percentage+4)), stat = "identity", color = "black", size = 6) + 
   xlab("") + ylab("Percentage of companies") +
-  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(), axis.text.x =
-          element_text(size  = 15))
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(),
+        axis.title.y = element_text(size = 20, vjust= 1.5), axis.text.y = element_text(size = 16),
+        axis.text.x = element_text(size = 19))
 
 #+ coord_flip()
 #geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
 
 ggsave("graphics/survey/roles.png", height = 6, width = 12)
-
-
-
-
 
 
 #COMPLEX
@@ -608,14 +619,17 @@ Q6_plot$Var1 <- reorder(Q6_plot$Var1, Q6_plot$percentage)
 
 
 
-ggplot(Q6_plot, aes(y = percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
-  geom_text(aes(label = percentage, y = - 2.5), stat = "identity", color = "black", size = 5) + 
-  xlab("") + ylab("Percentage of companies") + coord_flip() +
-  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank())
+ggplot(Q6_plot, aes(y = percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue) + ylim(0, 70) +
+  geom_text(aes(label = paste0(percentage, "%"), y = (percentage+5)), stat = "identity", color = "black", size = 6) + 
+  xlab("") + ylab("Percentage of companies") + coord_flip()  +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(), 
+        axis.title.x = element_text(size = 20, vjust= -0.3), axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 18))
+
 
 #geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
 
-ggsave("graphics/data-type-percentages.png", height = 6, width = 12)
+ggsave("graphics/survey/data_types.png", height = 8, width = 12)
 
  
 
@@ -863,21 +877,46 @@ q14.percent <- q14.percent[order(-q14.percent$order),]
 lik.q14 <- likert(q14)
 
 #Centred
-plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 4)
+plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 7) + ylab("Percentage of companies") +
+       theme(panel.grid = element_blank(),axis.ticks = element_blank(), axis.text.x = element_text(size = 20),
+             axis.title.x = element_text(size = 22, vjust= -0.3), axis.text.y = element_text(size = 18),
+             legend.title = element_blank())
 
-ggsave("graphics/q14-responses-centred.png")
+# for a panel grid with just vertical lines
+#panel.grid.minor.x = element_line(), panel.grid.major.x = element_line(), 
+#panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(),
+
+ggsave("graphics/Survey/q14_centred.png", height = 8, width = 14)
 
 #Filled
-plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 5, centered = FALSE) 
-ggsave("graphics/q14-responses-filled.png")
+plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 7, centered = FALSE) + ylab("Percentage of companies") +
+        theme(panel.grid = element_blank(), rect = element_blank(),
+              axis.ticks = element_blank(), axis.text.x = element_text(size = 20),
+              axis.title.x = element_text(size = 22, vjust= -0.3), axis.text.y = element_text(size = 20),
+              legend.title = element_blank())
+
+ggsave("graphics/Survey/q14_filled.png", height = 8, width = 14)
 
 #plot(lik.q14, low.color = , neutral.color = , high.color = , text.size = 5)
 #+ geom_hline(aes(yintercept = c(25, 50)), colour = "white")
 #+ ggtitle("Please indicate the extent to which each of the following issues influence your company's decision to use open data")
 
+
+#Other graphs to try
+#Density - interesting but would want to look at more
+likert.density.plot(lik.q14, facet = TRUE, bw = 0.5)
+
+#Heat plot
+likert.heat.plot(lik.q14, low.color = odi_red, high.color = odi_dBlue,
+                 text.color = "black", text.size = 4, wrap = 10)
+
+
 #----------------------------------------------------------------------
 
 #Incorporated date
+
+colIncD <- column("Incorporated Date")
+
 
 #Is incorporated date treated as a date?
 is.Date(biz[, colIncD])

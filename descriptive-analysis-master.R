@@ -136,12 +136,15 @@ table(sic.codes.all)
 # Percentages
 round(table(sic.codes.all) / length(na.omit(sic.codes.all)) * 100, digits = 2)
 
-#Set percentages as a data frame
-sectors <- as.data.frame(round(table(sic.codes.all) / length(na.omit(sic.codes.all)) * 100, digits = 2))
-
 #Make a reference dataframe of labels
 sector.names <- na.omit(data.frame(sic.lookup[, "Section"], sic.lookup[, "Label"]))
 colnames(sector.names) <- c('Section', 'Label')
+
+#---------------------------
+# USING SUMMARY DATA
+
+#Set percentages as a data frame
+sectors <- as.data.frame(round(table(sic.codes.all) / length(na.omit(sic.codes.all)) * 100, digits = 2))
 
 #Lookup the values so that if the 'section' matches the 'sic.code.all' attatch the definition
 sectors$label <- na.omit(ifelse(sector.names$Section %in% sectors$sic.codes.all, sector.names$Label, NA))
@@ -158,24 +161,37 @@ row.names(sectors) = NULL
 sectors$label <- reorder(sectors$label, sectors$Freq)
 
 
+
 #plot
 #Non-stacked bar
 ggplot(sectors, aes(y = Freq, x = label)) + geom_bar(stat = "identity", fill = odi_mBlue) +
   xlab("") + ylab("Percentage of companies") + coord_flip() +
   theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank())
 
-#Stacked bar - fail
-ggplot(sectors, aes(x = 1, y = Freq, fill = label)) + geom_bar(stat = "identity")
-
-barplot(as.matrix(sectors$Freq),beside = FALSE, col = odi_pallette) 
-
-#tree map
-
+ggsave("graphics/master/sector_bar.png", height = 6, width = 14)
 
 #Pie - don't do it
 #Add percentages to labels
 lbls <- paste(paste(sectors$label, sectors$Freq), "%", sep= "")
 pie(sectors$Freq, labels = lbls, col = odi_pallette)
+
+ggsave("graphics/master/sector_pie.png", height = 6, width = 14)
+
+#tree map
+library(treemap)
+#Hack for colours
+sectors$colours <- c(odi_pallette, "black", "white")
+
+treemap(sectors, index = "label", vSize = "Freq", vColor = "colours", type = "color", title = "",
+        algorithm = "pivotSize",fontsize.labels = 15, fontface.labels = "bold", fontfamily.labels = "Helvetica Neue",
+        border.col = "white", border.lwds = 1, lowerbound.cex.labels = 0, inflate.labels = TRUE, 
+        align.labels = c("center", "center"), overlap.labels = 0.5, aspRatio = 2)
+
+ggsave("graphics/master/sector_treemap.png", height = 6, width = 12)
+
+
+#-------------------
+#Using full data
 
 
 #Alternative whole string replace
@@ -200,6 +216,10 @@ pie(sectors$Freq, labels = lbls, col = odi_pallette)
 #need to remove a minus if want to 
 #sectors$label <- factor(sectors$label, levels = sectors$label)
 
+#Stacked bar - fail
+ggplot(sectors, aes(x = 1, y = Freq, fill = label)) + geom_bar(stat = "identity")
+
+barplot(as.matrix(sectors$Freq),beside = FALSE, col = odi_pallette) 
 
 #----------------------------------------------------
 #Incorporated date
@@ -259,7 +279,6 @@ list$age_cat <-cut(age_sec, c(0,2*one.year,4*one.year,10*one.year,100*one.year),
 table(list$age_cat)
 table(list$age_cat) / length(na.omit(list$age_cat)) * 100 
 
-
 #Plot
 #as dataframe
 age <- as.data.frame(round(table(list$age_cat) / length(na.omit(list$age_cat)) * 100, digits = 2))
@@ -275,26 +294,34 @@ ggplot(age, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi_mB
 ggsave("graphics/survey/age-percentages.png", height = 6, width = 12)
 
 
+
+
+
+
 #Timeline - Cumulative number of companies founded
 
 #By everyday
 #What about doing it every day!
 #Get everyday into a dataframe
-day.num <- c(1:as.numeric(as.duration(new_interval(as.POSIXct(ymd(20000101)), as.POSIXct(tdate)))/ddays(1)))
+day.num <- c(1:as.numeric(as.duration(new_interval(as.POSIXct(ymd(19900101)), as.POSIXct(tdate)))/ddays(1)))
 exist <- data.frame(day.num)
-exist$day <- as.Date(ymd(20000101) + days(exist$day.num))
+exist$day <- as.Date(ymd(19900101) + days(exist$day.num))
 
 #ensure still have interval for age
-age_int <- new_interval(as.POSIXct(biz[,colIncD]), as.POSIXct(tdate))
+age_int <- new_interval(as.POSIXct(list[, col.date]), as.POSIXct(tdate))
 #Now to get the number of companies that existed on that day
-for(i in 1:as.numeric(as.duration(new_interval(as.POSIXct(ymd(20000101)), as.POSIXct(tdate)))/ddays(1)))
+for(i in 1:as.numeric(as.duration(new_interval(as.POSIXct(ymd(19900101)), as.POSIXct(tdate)))/ddays(1)))
 {exist$exist.then[i] <- sum(exist$day[i] %within% age_int + 0, na.rm = TRUE)}
 
 #plot
 
-ggplot(exist, aes(y = exist.then, x = day)) + geom_line(stat = "identity", colour = odi_mBlue, size = 1)
+ggplot(exist, aes(y = exist.then, x = day)) + geom_area(aes(y = exist.then), stat = "identity", fill = odi_mBlue) +
+          xlab("Year") + ylab("Number of Companies") + 
+          theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(), 
+                axis.title.x = element_text(size = 20, vjust= -0.3), axis.title.y = element_text(size = 20, vjust= 1),
+                axis.text.x = element_text(size = 18), axis.text.y = element_text(size = 18))
 
-ggsave("graphics/master/incorporation_timeline_byday.png", height = 6, width = 14)
+ggsave("graphics/Master/incorporation_timeline.png", height = 6, width = 12)
 
 
 #----------------------------------------------------

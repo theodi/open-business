@@ -2,7 +2,7 @@
 
 setwd("~/git/open-business")
 theme_set(theme_minimal(base_family = "Helvetica Neue", base_size = 18))
-source('~/git/open-business/ODI colour Scheme.R')
+source('~/git/ODI colour Scheme.R')
 library(ggplot2)
 library(ggmap)
 
