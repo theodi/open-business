@@ -8,9 +8,10 @@ library(likert)
 library(plyr)
 library(lubridate)
 source('~/git/ODI colour Scheme.R')
-theme_set(theme_minimal(base_family = "Helvetica Neue", base_size = 18))
+theme_set(theme_minimal(base_family = "Helvetica", base_size = 18))
 
 options(stringsAsFactors = FALSE)
+
 
 # This loads the Google password
 source('~/git/SENSITIVE DO NOT COMMIT.R')
@@ -126,8 +127,17 @@ colQ12_c <- column("Q12. Recoded")
 # output <- as.data.frame(STAT)
 
 #For percentages - round to 2 DP
-# output <- as.data.frame(round(STAT, digits = 2))
+# output <- as.data.frame(round(STAT, digits = 0))
 
+
+#Plots as many forms
+#set image = 
+#PNG
+ggsave(file = "graphics/Survey/plot.png", plot=image, height = "y", width = "x")
+#EPS
+ggsave(file = "graphics/Survey/plot.eps", plot=image, height = "y", width = "x")
+#SVG
+ggsave(file = "graphics/Survey/plot.svg", plot=image, height = "y", width = "x")
 
 #---------------------------------------------------
 #---------------------------------------------------
@@ -145,8 +155,8 @@ table(biz[, colQ2])
 table(biz[, colQ2]) / length(na.omit(biz[, colQ2])) * 100 
 
 #Creates a new data frame - so we can print and plot
-employ <- as.data.frame(table(biz[, colQ2]) / length(na.omit(biz[, colQ2])) * 100)
-#employ.count <- as.data.frame(table(biz[, colQ2])) #for printing count
+employ <- as.data.frame(round(table(biz[, colQ2]) / length(na.omit(biz[, colQ2])) * 100, digits=0))
+employ.count <- as.data.frame(table(biz[, colQ2])) #for printing count
 
 #Lower case "More than..." to "more than..."
 employ$Var1 <- as.character(employ$Var1)
@@ -159,7 +169,7 @@ target.Q2 <- c("fewer than 10 employees", "10 - 50 employees", "51 - 250 employe
 # order Var1 by the target
 employ$Var1 <- factor(employ$Var1, levels=target.Q2)
 employ <- employ[order(employ$Var1, employ$Freq),]
-
+rownames(employ) = NULL
 #Adding line breaks for two longer labels
 levels(employ$Var1) <- gsub(" employees", "\n employees", levels(employ$Var1))
 
@@ -168,9 +178,9 @@ levels(employ$Var1) <- gsub(" employees", "\n employees", levels(employ$Var1))
 #Plot
 ggplot(employ, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue) +
   ylim(0, 80) +
-  geom_text(aes(label = paste(round(Freq, digits=2), "%"), y = (Freq+3)), stat = "identity", color = "black", size = 6) + 
+  geom_text(aes(label = paste(round(Freq, digits = 0), "%"), y = (Freq+3)), stat = "identity", color = "black", size = 6) + 
   xlab("") + ylab("Percentage of companies")  +
-  theme(axis.text.y = element_text(size = 16), axis.text.x = element_text(size = 20),
+  theme(axis.text.y = element_text(size = 16), axis.text.x = element_text(size = 16),
         axis.title.y = element_text(size = 20, vjust=1.2), panel.grid.minor = element_blank(), 
         panel.grid.major = element_blank(), axis.ticks = element_blank())
 
@@ -179,8 +189,13 @@ ggplot(employ, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi
 # to angle the x labels axis.text.x = element_text(angle=90, vjust=1)
 # geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1)
 
-#save as PNG
-ggsave("graphics/survey/employees.png", height = 6, width = 12)
+#set image = 
+#PNG
+ggsave(file = "graphics/Survey/employees.png", plot=image, height = 6, width = 12)
+#EPS
+ggsave(file = "graphics/Survey/employees.eps", plot=image, height = 6, width = 12)
+#SVG
+ggsave(file = "graphics/Survey/employees.svg", plot=image, height = 6, width = 12)
 
 
 #------------------------------------------------
@@ -199,7 +214,7 @@ sectors.count <- sectors.count[order(-sectors.count$Freq),]
 
 
 #Save percentages as data frame
-sectors <- as.data.frame(round(table(biz[, colQ3]) / length(na.omit(biz[, colQ3])) * 100, digits = 2))
+sectors <- as.data.frame(round(table(biz[, colQ3]) / length(na.omit(biz[, colQ3])) * 100, digits=0))
 
 #Rename mistakes
 sectors$Var1 <- as.character(sectors$Var1)
@@ -208,27 +223,27 @@ sectors$Var1[sectors$Var1 == "Food and agriculture"] <- "Food and Agriculture"
 
 #To order 
 sectors <- sectors[order(-sectors$Freq),]
+sectors$Var1 <- reorder(sectors$Var1, sectors$Freq)
 
 # Plot
 
-# WORKING!!!!!!!
-# Attempt 2 - this works if you treat it as character not factor!!!!
-
-sectors$Var1 <- reorder(sectors$Var1, sectors$Freq)
-
 ggplot(sectors, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  + ylim(0, 70) +
- geom_text(aes(label = paste0(round(Freq, digits=2), "%"), y = (Freq+4.5)), stat = "identity", color = "black", size = 6) + 
+ geom_text(aes(label = paste0(round(Freq, digits = 0), "%"), y = (Freq+4.5)), stat = "identity", color = "black", size = 6) + 
  xlab("") + ylab("Percentage of companies") + coord_flip() +
  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(),
        axis.title.x = element_text(size = 20, vjust=-0.3), axis.text.x = element_text(size = 16),
        axis.text.y = element_text(size = 19))
 
 
-
 #geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
 
-ggsave("graphics/Survey/sector-percentages.png", height = 6, width = 12)
-
+#set image = 
+#PNG
+ggsave(file = "graphics/Survey/business-area.png", plot=image, height = 6, width = 12)
+#EPS
+ggsave(file = "graphics/Survey/business-area.eps", plot=image, height = 6, width = 12)
+#SVG
+ggsave(file = "graphics/Survey/business-area.svg", plot=image, height = 6, width = 12)
 
 #THIS IS IRRELEVANT AS I HAVE GOT IT TO WORK!!!
 
@@ -313,7 +328,7 @@ sum(table(rowSums(biz[, Q4_dummies]))[2:6]) / sum(table(rowSums(biz[, Q4_dummies
 
 #Order for plot and print
 #Save percentages as data frame (transpose to get )
-Q4_table <- t(as.data.frame(round(sapply(biz[, Q4_dummies], function(x) table(x) / length(na.omit(x)) * 100), digits=2)))
+Q4_table <- t(as.data.frame(sapply(biz[, Q4_dummies], function(x) table(x) / length(na.omit(x)) * 100)))
 #extract only TRUE 
 Q4_table <- as.data.frame(Q4_table[,"TRUE"])
 #name column
@@ -338,7 +353,7 @@ Q4_table$Var1 <- reorder(Q4_table$Var1, Q4_table$Percentage)
 #Plot
 
 ggplot(Q4_table, aes(y = Percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  + ylim(0, 65) +
-  geom_text(aes(label = paste0(Percentage, "%"), y = (Percentage+5)), stat = "identity", color = "black", size = 6) + 
+  geom_text(aes(label = paste0(round(Percentage, digits = 0), "%"), y = (Percentage+5)), stat = "identity", color = "black", size = 6) + 
   xlab("") + ylab("Percentage of companies") + coord_flip() + 
   theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), 
         axis.ticks = element_blank(), axis.title.x = element_text(size = 20, vjust=-0.3),
@@ -410,7 +425,7 @@ sapply(biz[rowSums(biz[, Q5_dummies]) == 1, Q5_dummies], function(x) table(x) / 
 
 #Plot
 #Save percentages as data frame (transpose to get )
-Q5_table <- t(as.data.frame(round(sapply(biz[, Q5_dummies], function(x) table(x) / length(na.omit(x)) * 100), digits=2)))
+Q5_table <- t(as.data.frame(sapply(biz[, Q5_dummies], function(x) table(x) / length(na.omit(x)) * 100)))
 
 #extract only TRUE 
 Q5_plot <- as.data.frame(Q5_table[,"TRUE"])
@@ -427,14 +442,24 @@ Q5_plot$Var1 = rownames(Q5_plot)
 # Reset the `rownames` of your original data
 rownames(Q5_plot) = NULL
 
+#Set as character to allow ordering
+Q5_plot$Var1 <- as.character(Q5_plot$Var1)
+#To order
+Q5_plot <- Q5_plot[order(-Q5_plot[, 'percentage']),]
+# Reset the `rownames` of your original data
+rownames(Q5_plot) = NULL
+
+#Reorder for plot
+Q5_plot$Var1 <- reorder(Q5_plot$Var1, -Q5_plot$percentage)
+
 #Adding breaks in between words then fix for 3 word ones so 'open data' appears on one line
-#This requires setting levels for the plot and then using the levels not the variable itself in the plot
+#This requires setting levels for the plot 
 levels(Q5_plot$Var1) <- gsub(" ", "\n", Q5_plot$Var1)
 levels(Q5_plot$Var1) <- gsub("open\ndata", "open data", levels(Q5_plot$Var1))
 
 #Plot
-ggplot(Q5_plot, aes(y = percentage, x = levels(Var1))) + geom_bar(stat = "identity", fill = odi_mBlue) + ylim(0, 70) +
-  geom_text(aes(label = paste0(percentage, "%"), y = (percentage+4)), stat = "identity", color = "black", size = 6) + 
+ggplot(Q5_plot, aes(y = percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue) + ylim(0, 70) +
+  geom_text(aes(label = paste0(round(percentage, digits = 0), "%"), y = (percentage + 4)), stat = "identity", color = "black", size = 6) + 
   xlab("") + ylab("Percentage of companies") +
   theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(),
         axis.title.y = element_text(size = 20, vjust= 1.5), axis.text.y = element_text(size = 16),
@@ -443,8 +468,16 @@ ggplot(Q5_plot, aes(y = percentage, x = levels(Var1))) + geom_bar(stat = "identi
 #+ coord_flip()
 #geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
 
-ggsave("graphics/survey/roles.png", height = 6, width = 12)
+#ggsave("graphics/survey/roles.png", height = 6, width = 12)
 
+#To save
+#set image = 
+#PNG
+ggsave(file = "graphics/Survey/roles.png", plot=image, height = 6, width = 12)
+#EPS
+ggsave(file = "graphics/Survey/roles.eps", plot=image, height = 6, width = 12)
+#SVG
+ggsave(file = "graphics/Survey/roles.svg", plot=image, height = 6, width = 12)
 
 #COMPLEX
 
@@ -534,23 +567,12 @@ Q6_dummies <- c('Q6_agri', 'Q6_busi', 'Q6_cons', 'Q6_demo', 'Q6_econ', 'Q6_educ'
                 'Q6_other')
 
 
-
-#--------------------------------------------
-#Printing example here!
-#Save percentages as data frame (transpose to get )
-output <- t(as.data.frame(round(sapply(biz[, Q6_dummies], function(x) table(x) / length(na.omit(x)) * 100), digits=2)))
-#Rename the rows - add other category
-cat_Q6 <- c(answers_Q6, "Other")
-row.names(output) <- cat_Q6
-#To order
-output <- output[order(-output[,"TRUE"]),]
-#----------------------------------------------
-
 #Analyse
 
 #Number and percentage of answers in each column
 sapply(biz[, Q6_dummies], table) 
 sapply(biz[, Q6_dummies], function(x) table(x) / length(na.omit(x)) * 100) # percentage TRUE/FALSE by column
+
 
 # How many companies chose only one type of data?
 table(rowSums(biz[, Q6_dummies])) #Count of data types chosen
@@ -573,9 +595,51 @@ sapply(biz[rowSums(biz[, Q6_dummies]) == 1, Q6_dummies], table) #Gives TRUE/FALS
 sapply(biz[rowSums(biz[, Q6_dummies]) == 1, Q6_dummies], function(x) table(x) / length(na.omit(x)) * 100) # percentage of those who ticked that box from all who ticked one box
 
 
+#To save this - a bit hacky
 
+#Save percentages as data frame (transpose to get )
+data.type <- t(as.data.frame(round(sapply(biz[, Q6_dummies], function(x) table(x) / length(na.omit(x)) * 100), digits = 0)))
+#extract only TRUE 
+data.type <- as.data.frame(data.type[,"TRUE"])
+#name it
+colnames(data.type) <- "percentage"
+#Rename the rows - add other category
+cat_Q6 <- c(answers_Q6, "Other")
+row.names(data.type) <- cat_Q6
+#take out row names as a column
+data.type$Var1 = rownames(data.type)
+# Reset the `rownames` of your original data
+rownames(data.type) = NULL
+#make them characters 
+data.type$Var1 <- as.character(data.type$Var1)
+#To order
+data.type <- data.type[order(-data.type[,"percentage"]),]
+# Reset the `rownames` again
+rownames(data.type) = NULL
+
+#Save percentages as data frame (transpose to get )
+data.type.count <- t(as.data.frame(sapply(biz[, Q6_dummies], table))) 
+#extract only TRUE 
+data.type.count <- as.data.frame(data.type.count[,"TRUE"])
+#name it
+colnames(data.type.count) <- "count"
+#Rename the rows - add other category
+cat_Q6 <- c(answers_Q6, "Other")
+row.names(data.type.count) <- cat_Q6
+#take out row names as a column
+data.type.count$Var1 = rownames(data.type.count)
+# Reset the `rownames` of your original data
+rownames(data.type.count) = NULL
+#make them characters 
+data.type.count$Var1 <- as.character(data.type.count$Var1)
+#To order
+data.type.count <- data.type.count[order(-data.type.count[,"count"]),]
+# Reset the `rownames` again
+rownames(data.type.count) = NULL
+
+
+#---------------------------------------------
 #This is alright but produces a hell of a lot of data
-
 # Crossproduct - which appear together
 crossprod(na.omit(as.matrix(biz[, Q6_dummies])))
 # % of total 
@@ -590,37 +654,15 @@ crossprod(na.omit(as.matrix(biz[, Q6_dummies]))) / True.m_Q6 * 100
 sapply(biz[biz[, "Q6_agri"], Q6_dummies], table)
 sapply(biz[biz[, "Q6_agri"], Q6_dummies], function(x) table(x) / length(na.omit(x)) * 100)
 
-
+#---------------------------------------------
 
 #Plotting!!!
 
+#Order for plot
+data.type$Var1 <- reorder(data.type$Var1, data.type$percentage)
 
-#Save percentages as data frame (transpose to get )
-Q6_table <- t(as.data.frame(round(sapply(biz[, Q6_dummies], function(x) table(x) / length(na.omit(x)) * 100), digits=2)))
-#Rename the rows - add other category
-cat_Q6 <- c(answers_Q6, "Other")
-row.names(Q6_table) <- cat_Q6
-#To order
-Q6_table <- Q6_table[order(-Q6_table[,"TRUE"]),]
-
-
-#extract only TRUE 
-Q6_plot <- as.data.frame(Q6_table[,"TRUE"])
-#name it
-colnames(Q6_plot) <- "percentage"
-#take out row names as a column
-Q6_plot$Var1 = rownames(Q6_plot)
-# Reset the `rownames` of your original data
-rownames(Q6_plot) = NULL
-#make them characters 
-Q6_plot$Var1 <- as.character(Q6_plot$Var1)
-#Reorder
-Q6_plot$Var1 <- reorder(Q6_plot$Var1, Q6_plot$percentage)
-
-
-
-ggplot(Q6_plot, aes(y = percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue) + ylim(0, 70) +
-  geom_text(aes(label = paste0(percentage, "%"), y = (percentage+5)), stat = "identity", color = "black", size = 6) + 
+image = ggplot(data.type, aes(y = percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue) + ylim(0, 70) +
+  geom_text(aes(label = paste0(round(percentage, digits = 0), "%"), y = (percentage+5)), stat = "identity", color = "black", size = 6) + 
   xlab("") + ylab("Percentage of companies") + coord_flip()  +
   theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(), 
         axis.title.x = element_text(size = 20, vjust= -0.3), axis.text.x = element_text(size = 16),
@@ -629,8 +671,13 @@ ggplot(Q6_plot, aes(y = percentage, x = Var1)) + geom_bar(stat = "identity", fil
 
 #geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
 
-ggsave("graphics/survey/data_types.png", height = 8, width = 12)
-
+#set image = 
+#PNG
+ggsave(file = "graphics/Survey/data_types.png", plot=image, height = 8, width = 12)
+#EPS
+ggsave(file = "graphics/Survey/data_types.eps", plot=image, height = 8, width = 12)
+#SVG
+ggsave(file = "graphics/Survey/data_types.svg", plot=image, height = 8, width = 12)
  
 
 
@@ -709,8 +756,9 @@ crossprod(na.omit(as.matrix(biz[, crossQ7.Q9]))) / nrow(biz[, crossQ7.Q9]) * 100
 answers_Q12 <- c("Provide unlimited free access to everyone", 
                  "Provide limited free access to everyone \\(e\\.g\\. rate or volume limited\\)", 
                  "Provide free access to only a subset of people", 
-                 "Provide only paid-for access",
-                 "Depends upon client")
+                 "Provide only paid-for access"
+                 )
+#", Depends upon client"
 
 #Any missings?
 length(which(is.na(biz[, colQ12_c])))
@@ -722,35 +770,25 @@ biz$Q12_unlimited <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[1], bi
 biz$Q12_limited <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[2], biz[, colQ12_c]))
 biz$Q12_subset <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[3], biz[, colQ12_c]))
 biz$Q12_paid <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[4], biz[, colQ12_c]))
-biz$Q12_client <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[5], biz[, colQ12_c]))
+#biz$Q12_client <- ifelse(is.na(biz[, colQ12_c]), NA, grepl(answers_Q12[5], biz[, colQ12_c]))
 
 # Only OTHER text for Q12
 #Extracts other answers out
 biz$Q12_other_text <- gsub(answers_Q12[1], "", biz[, colQ12_c])
-for (i in 2:5) biz$Q12_other_text <- gsub(answers_Q12[i], "", biz[, "Q12_other_text"])
+for (i in 2:4) biz$Q12_other_text <- gsub(answers_Q12[i], "", biz[, "Q12_other_text"])
 biz$Q12_other_text <- gsub("^(, ){1,4}", "", biz$Q12_other_text)
 
 #Creates dummy for other text
 biz$Q12_other <- ifelse(is.na(biz[, colQ12_c]), NA, ifelse(biz$Q12_other_text == "", FALSE, TRUE))
 
 # Set up dummy variables
-Q12_dummies <- c('Q12_unlimited', 'Q12_limited', 'Q12_subset', 'Q12_paid', 'Q12_client', 'Q12_other')
+Q12_dummies <- c('Q12_unlimited', 'Q12_limited', 'Q12_subset', 'Q12_paid', 'Q12_other')
+
+#'Q12_client',
 
 
-#-----------------------------------------------------
-#Printing example here!
-#Save percentages as data frame (transpose to get )
-output <- as.data.frame(crossprod(na.omit(as.matrix(biz[, Q12_dummies.x]))))
 
-#Rename the columns - using rename of limited and add other category
-cat_Q12 <- c("Provide unlimited free access to everyone", 
-             "Provide limited free access to everyone", 
-             "Provide free access to only a subset of people", 
-             "Provide only paid-for access")
-colnames(output) <- cat_Q12
-row.names(output) <- cat_Q12
-#-----------------------------------------------------
-
+#Analysis
 
 # Analysing the dummy variables for Q12 - including 'other'
 sapply(biz[, Q12_dummies], table)
@@ -763,11 +801,66 @@ sum(table(rowSums(biz[, Q12_dummies]))[2:5])
 # Percentage of 2 or more pricing mechanisms
 sum(table(rowSums(biz[, Q12_dummies]))[2:5]) / sum(table(rowSums(biz[, Q12_dummies]))) * 100
 
-
 # Only checked on box - which box? - especially salient here
 sapply(biz[rowSums(biz[, Q12_dummies]) == 1, Q12_dummies], table)
 sapply(biz[rowSums(biz[, Q12_dummies]) == 1, Q12_dummies], function(x) table(x) / length(na.omit(x)) * 100)
 
+#for output
+
+prices.count <- as.data.frame(sapply(biz[, Q12_dummies], table))
+#extract only TRUE 
+prices.count <- as.data.frame(prices.count["TRUE",])
+#name it
+row.names(prices.count) <- "percentage"
+#Rename the rows - add other category
+cat_Q12 <- c(answers_Q12, "Other")
+colnames(prices.count) <- cat_Q12
+
+
+prices <- t(as.data.frame(sapply(biz[, Q12_dummies], function(x) table(x) / length(na.omit(x)) * 100)))
+#extract only TRUE 
+prices <- as.data.frame(prices[,"TRUE"])
+#name it
+colnames(prices) <- "percentage"
+#Rename the rows - add other category
+cat_Q12 <- c("Unlimited free access", "Limited free access", "Free access for subset", 
+             "Paid for access", "Other")
+prices$Var1 <- cat_Q12
+row.names(prices) <- NULL
+
+#Reorder for plot
+prices$Var1 <- reorder(prices$Var1, -prices$percentage)
+
+#Adding breaks in between words then fix for 3 word ones so 'open data' appears on one line
+#This requires setting levels for the plot 
+levels(prices$Var1) <- gsub("imited ", "imited\n ", prices$Var1)
+levels(prices$Var1) <- gsub("access ", "access\n", levels(prices$Var1))
+levels(prices$Var1) <- gsub("for access", "for\naccess", levels(prices$Var1))
+
+
+#Plot
+image = ggplot(prices, aes(y = percentage, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue) + ylim(0, 70) +
+  geom_text(aes(label = paste0(round(percentage, digits = 0), "%"), y = (percentage + 4)), stat = "identity", color = "black", size = 6) + 
+  xlab("") + ylab("Percentage of companies") +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(), axis.ticks = element_blank(),
+        axis.title.y = element_text(size = 20, vjust= 1.5), axis.text.y = element_text(size = 16),
+        axis.text.x = element_text(size = 19))
+
+
+# + coord_flip() 
+#geom_hline(yintercept = seq(25, 100, 25), col = "white", size = 1.5) +
+
+#set image = 
+#PNG
+ggsave(file = "graphics/Survey/pricing.png", plot=image, height = 6, width = 12)
+#EPS
+ggsave(file = "graphics/Survey/pricing.eps", plot=image, height = 6, width = 12)
+#SVG
+ggsave(file = "graphics/Survey/pricing.svg", plot=image, height = 6, width = 12)
+
+
+
+#-----------------------------------------------------
 
 # Crossproduct - only makes sense with original 4 variables use.x
 Q12_dummies.x <- c('Q12_unlimited', 'Q12_limited', 'Q12_subset', 'Q12_paid')
@@ -775,6 +868,16 @@ Q12_dummies.x <- c('Q12_unlimited', 'Q12_limited', 'Q12_subset', 'Q12_paid')
 crossprod(na.omit(as.matrix(biz[, Q12_dummies.x])))
 crossprod(na.omit(as.matrix(biz[, Q12_dummies.x]))) / nrow(biz[, Q12_dummies.x]) * 100
 
+#Save percentages as data frame (transpose to get )
+cross.12x <- as.data.frame(crossprod(na.omit(as.matrix(biz[, Q12_dummies.x]))))
+
+#Rename the columns - using rename of limited and add other category
+cat_Q12 <- c("Provide unlimited free access to everyone", 
+             "Provide limited free access to everyone", 
+             "Provide free access to only a subset of people", 
+             "Provide only paid-for access")
+colnames(cross.12x) <- cat_Q12
+row.names(cross.12x) <- cat_Q12
 
 # DONT THINK THIS MAKES SENSE IN CONTEXT
 # working out how often two variables occur together by % in column - i.e. [2,1] gives % of those who answered limited of those who answered unlimited
@@ -789,6 +892,7 @@ crossprod(na.omit(as.matrix(biz[, Q12_dummies.x]))) / nrow(biz[, Q12_dummies.x])
 #sum(table(rowSums(biz[, Q12_dummies.x]))[3:5])
 # Percentage of 2 or more pricing mechanisms
 #sum(table(rowSums(biz[, Q12_dummies.x]))[3:5]) / sum(table(rowSums(biz[, Q12_dummies.x]))) * 100
+
 #----------------------------------------------------------
 # Q14 Issues with/in open data
 
@@ -860,7 +964,7 @@ q14 <- na.omit(q14)
 #To get frequencies
 #Transform annoyingly names columns numbers which is a pain
 q14.count <- t(sapply(q14, table))
-q14.percent <- round(t(sapply(q14, function(x) table(x) / length(na.omit(x)) * 100)), digits = 2)
+q14.percent <- round(t(sapply(q14, function(x) table(x) / length(na.omit(x)) * 100)), digits = 0)
 
 #To order in same way likert does (THIS IS A TERRIBLE HACK)
 # create a new column to order them by - in the same way likert does by combo of agree, strongly agree. Named order
@@ -877,8 +981,8 @@ q14.percent <- q14.percent[order(-q14.percent$order),]
 lik.q14 <- likert(q14)
 
 #Centred
-plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 7) + ylab("Percentage of companies") +
-       theme(panel.grid = element_blank(),axis.ticks = element_blank(), axis.text.x = element_text(size = 20),
+image = plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 7) + ylab("Percentage of companies") +
+       theme(panel.grid = element_blank(), axis.ticks = element_blank(), axis.text.x = element_text(size = 20),
              axis.title.x = element_text(size = 22, vjust= -0.3), axis.text.y = element_text(size = 18),
              legend.title = element_blank())
 
@@ -886,7 +990,14 @@ plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 7) + yla
 #panel.grid.minor.x = element_line(), panel.grid.major.x = element_line(), 
 #panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(),
 
-ggsave("graphics/Survey/q14_centred.png", height = 8, width = 14)
+#set image = 
+#PNG
+ggsave(file = "graphics/Survey/influence_centred.png", plot=image, height = 8, width = 14)
+#EPS
+ggsave(file = "graphics/Survey/influence_centred.eps", plot=image, height = 8, width = 14)
+#SVG
+ggsave(file = "graphics/Survey/influence_centred.svg", plot=image, height = 8, width = 14)
+
 
 #Filled
 plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 7, centered = FALSE) + ylab("Percentage of companies") +
@@ -895,7 +1006,14 @@ plot(lik.q14, low.color = odi_red, high.color = odi_dGreen, text.size = 7, cente
               axis.title.x = element_text(size = 22, vjust= -0.3), axis.text.y = element_text(size = 20),
               legend.title = element_blank())
 
-ggsave("graphics/Survey/q14_filled.png", height = 8, width = 14)
+#set image = 
+#PNG
+ggsave(file = "graphics/Survey/influence_filled.png", plot=image, height = 8, width = 14)
+#EPS
+ggsave(file = "graphics/Survey/influence_filled.eps", plot=image, height = 8, width = 14)
+#SVG
+ggsave(file = "graphics/Survey/influence_filled.svg", plot=image, height = 8, width = 14)
+
 
 #plot(lik.q14, low.color = , neutral.color = , high.color = , text.size = 5)
 #+ geom_hline(aes(yintercept = c(25, 50)), colour = "white")
@@ -909,6 +1027,8 @@ likert.density.plot(lik.q14, facet = TRUE, bw = 0.5)
 #Heat plot
 likert.heat.plot(lik.q14, low.color = odi_red, high.color = odi_dBlue,
                  text.color = "black", text.size = 4, wrap = 10)
+
+
 
 
 #----------------------------------------------------------------------
@@ -977,7 +1097,7 @@ table(biz$age_cat) / length(na.omit(biz$age_cat)) * 100
 
 #Plot
 #as dataframe
-age <- as.data.frame(round(table(biz$age_cat) / length(na.omit(biz$age_cat)) * 100, digits = 2))
+age <- as.data.frame(round(table(biz$age_cat) / length(na.omit(biz$age_cat)) * 100, digits = 0))
 
 ggplot(age, aes(y = Freq, x = Var1)) + geom_bar(stat = "identity", fill = odi_mBlue)  +
   geom_text(aes(label = Freq, y = - 2.5), stat = "identity", color = "black", size = 4) + 

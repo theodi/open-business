@@ -20,8 +20,11 @@ list.all <- sheetAsMatrix(list.sheet[["Data"]], header = TRUE)
 
 # Takes list as only observations (companies) which have UK company numbers 
 list.num.full <- list.all[complete.cases(list.all[, "UK Company Number"]), ]
-
 list.num <- list.num.full[list.num.full[, "UK Company Number"] != "y", ]
+
+              #For adding additional cases
+                #where Confident = "D" - all have company numbers
+                  #list <- list.all[list.all[, "Confident in inclusion on public OBUK"] == "D", ] 
 
 #Sets up columns
 column.num <- function(var, x = list.num){
@@ -36,6 +39,8 @@ col.num<- column.num("UK Company Number")
 #this is our list of company numbers
 list.num$col.num <- list.num[, col.num]
 
+              #For additional cases
+                list.num <- list[ ,"UK Company Number"] #Will need to use list.num in stuff below
 
 #------------------------
 
@@ -152,6 +157,10 @@ list.num$col.num <- list.num[, col.num]
 #whole list
 company.numbers <- as.vector(list.num$col.num)
 
+        #For extras
+          #company.numbers <- list.num
+
+
 #Column names get lost in loop
 final <- data.frame(CompanyNumber = character(), CompanyName = character(), CompanyCategory = character(), CompanyStatus = character(),
                     IncorporationDate = character(), RegPostcode = character(), SICCodes = character(),
@@ -173,7 +182,7 @@ for(num in company.numbers){
     ifelse(!is.null(document$primaryTopic$SICCodes$SicText), sic.code <- document$primaryTopic$SICCodes$SicText, sic.code <- NA)
     value <- vector(,length =(4-length(sic.code)))
     sic.codes <- append(as.vector(sic.code), value)
-    record <- as.data.frame(t(c(com.num, com.name, com.cat, com.stat, con.org, date, com.post, sic.codes)))
+    record <- as.data.frame(t(c(com.num, com.name, com.cat, com.stat, date, com.post, sic.codes)))
     final <<- rbind(final, record)
   },
   error = function(e) cat("MESSAGE:", conditionMessage(e), "\n"))
@@ -189,4 +198,41 @@ colnames(final) <- c("CompanyNumber", "CompanyName", "CompanyCategory", "Company
 final$IncorporationDate <- as.Date(final$IncorporationDate, format("%d/%m/%Y"))
 
 #creates a csv
-write.csv(final, "CH_full_info.csv", , row.names = FALSE)
+write.csv(final, "data/CH_full_info.csv", , row.names = FALSE)
+
+    #For extras
+          write.csv(final, "data/CH_extras_info.csv", , row.names = FALSE)
+
+
+#For accounts type
+
+#whole list
+company.numbers <- as.vector(list.num$col.num)
+
+#Column names get lost in loop
+accounts <- data.frame(CompanyNumber = character(), CompanyName = character(), AccountType = character(), row.names = NULL)
+#adds a progress bar 
+pb <- txtProgressBar(min = 0, max = length(company.numbers), style = 3)
+
+#for loop performed on individual elements of full list, sets url and retrives company name, number and incorp date
+for(num in company.numbers){
+  tryCatch({
+    url <- paste0('http://data.companieshouse.gov.uk/doc/company/',num,'.json')
+    document <- fromJSON(url)
+    com.num <- document$primaryTopic$CompanyNumber
+    com.name <- document$primaryTopic$CompanyName
+    ifelse(!is.null(document$primaryTopic$Accounts$AccountCategory), com.acc <- document$primaryTopic$Accounts$AccountCategory, com.acc <- NA)
+    record <- as.data.frame(t(c(com.num, com.name, com.acc)))
+    accounts <<- rbind(accounts, record)
+  },
+  error = function(e) cat("MESSAGE:", conditionMessage(e), "\n"))
+  setTxtProgressBar(pb, match(num, company.numbers))
+}
+close(pb)
+
+
+#Name columns
+colnames(accounts) <- c("CompanyNumber", "CompanyName", "AccountType")
+
+#creates a csv
+write.csv(accounts, "data/Account_Type.csv", , row.names = FALSE)
